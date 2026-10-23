@@ -146,13 +146,13 @@ function moverArtSeguro(fid,to){
  d.folderId=dest;if(!guardarArts(ds))return false;
  clipboardExplorer=null;selecionado=null;historico();renderExplorer();alert('ART movida com sucesso.');return true;
 }
-function iniciarArrasteART(e,fid){selecionado={type:'art',id:fid};e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',fid)}
+function iniciarArrasteART(e,fid){selecionado={type:'art',id:fid};e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',fid);e.dataTransfer.setData('application/x-methodflow-art',fid)}
 function permitirSoltarART(e){e.preventDefault();e.dataTransfer.dropEffect='move';e.currentTarget.classList.add('drop-target')}
 function sairDestinoART(e){e.currentTarget.classList.remove('drop-target')}
-function soltarART(e,dest){e.preventDefault();e.stopPropagation();e.currentTarget.classList.remove('drop-target');const fid=e.dataTransfer.getData('text/plain');if(fid&&todasArts()[fid])moverArtSeguro(fid,dest)}
+function soltarART(e,dest){e.preventDefault();e.stopPropagation();e.currentTarget.classList.remove('drop-target');const fid=e.dataTransfer.getData('application/x-methodflow-art')||e.dataTransfer.getData('text/plain');if(fid&&todasArts()[fid])moverArtSeguro(fid,dest)}
 function copiarSelecionado(cut){
  if(!selecionado)return alert('Selecione uma pasta ou uma ART.');
- clipboardExplorer={...selecionado,cut};renderExplorer();
+ clipboardExplorer={...selecionado,cut};renderExplorer();alert(cut?'ART marcada para mover. Abra a pasta de destino e clique em Colar.':'Item copiado. Abra a pasta de destino e clique em Colar.');
 }
 function colarSelecionado(){
  if(!clipboardExplorer)return alert('Use Copiar ou Recortar antes.');
@@ -195,7 +195,7 @@ function artsFiltradas(){
  let docs=Object.values(todasArts()).filter(d=>{
   let h=d.header||{},date=h.Data||'';
   const search=[h['Código ART'],h.Tarefa,h.Unidade,h.Setor,h.Responsável].join(' ').toLocaleLowerCase('pt-BR');
-  return (!pastaAtual||d.folderId===pastaAtual)&&(!q||search.includes(q))&&(!de||date>=de)&&(!ate||date<=ate)
+  return ((q||de||ate)?(!pastaAtual||d.folderId===pastaAtual):(d.folderId||null)===pastaAtual)&&(!q||search.includes(q))&&(!de||date>=de)&&(!ate||date<=ate)
  });
  docs.sort((a,b)=>sort==='nome'?String(a.header?.Tarefa||'').localeCompare(String(b.header?.Tarefa||''),'pt-BR'):sort==='antigo'?String(a.atualizado||'').localeCompare(String(b.atualizado||'')):String(b.atualizado||'').localeCompare(String(a.atualizado||'')));
  return docs;
@@ -216,7 +216,7 @@ function renderExplorer(){
  const showingFolders=Object.values(fs).filter(f=>f.parent===pastaAtual&&(!q||f.name.toLocaleLowerCase('pt-BR').includes(q.toLocaleLowerCase('pt-BR')))).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
  document.getElementById('totalFiltrado').textContent=showingFolders.length+' pasta(s), '+docs.length+' ART(s)';
  document.getElementById('selecaoExplorer').textContent=selecionado?'Selecionado: '+(selecionado.type==='folder'?'Pasta':'ART'):'Nenhuma seleção';
- const folderHTML=showingFolders.map(f=>'<div role="button" tabindex="0" class="explorer-item '+(selecionado?.type==='folder'&&selecionado.id===f.id?'selected':'')+'" ondragover="permitirSoltarART(event)" ondragleave="sairDestinoART(event)" ondrop="soltarART(event,'+JSON.stringify(f.id)+')" onclick="selecionarItem(\'folder\','+JSON.stringify(f.id)+')" ondblclick="abrirSelecionado(\'folder\','+JSON.stringify(f.id)+')"><span class="glyph">📁</span><span class="item-name">'+esc(f.name)+'</span><span class="item-meta">Pasta</span><button class="item-open" onclick="event.stopPropagation();abrirSelecionado(\'folder\','+JSON.stringify(f.id)+')">Abrir</button></div>').join('');
+ const folderHTML=showingFolders.map(f=>'<div role="button" tabindex="0" class="explorer-item '+(selecionado?.type==='folder'&&selecionado.id===f.id?'selected':'')+'" ondragover="permitirSoltarART(event)" ondragleave="sairDestinoART(event)" ondrop="soltarART(event,'+JSON.stringify(f.id)+')" onclick="abrirSelecionado(\'folder\','+JSON.stringify(f.id)+')" ><span class="glyph">📁</span><span class="item-name">'+esc(f.name)+'</span><span class="item-meta">Pasta</span><button class="item-open" onclick="event.stopPropagation();abrirSelecionado(\'folder\','+JSON.stringify(f.id)+')">Abrir</button></div>').join('');
  const artHTML=docs.map(d=>{let h=d.header||{};return '<div role="button" tabindex="0" class="explorer-item '+(selecionado?.type==='art'&&selecionado.id===d.id?'selected':'')+'" draggable="true" ondragstart="iniciarArrasteART(event,'+JSON.stringify(d.id)+')" onclick="selecionarItem(\'art\','+JSON.stringify(d.id)+')" ondblclick="abrirSelecionado(\'art\','+JSON.stringify(d.id)+')"><span class="glyph">📋</span><span class="item-name">'+esc(h.Tarefa||h['Código ART']||'ART sem título')+'</span><span class="item-meta">'+esc(h.Data||'Sem data')+'</span><label class="explorer-check" onclick="event.stopPropagation()"><input type="checkbox" onchange="event.stopPropagation();selecionarItem(&quot;art&quot;,this.dataset.id)" data-id="'+esc(d.id)+'" '+(selecionado?.type==='art'&&selecionado.id===d.id?'checked':'')+'> Selecionar</label><button class="item-open" onclick="event.stopPropagation();abrirSelecionado(\'art\','+JSON.stringify(d.id)+')">Abrir ART</button></div>'}).join('');
  document.getElementById('tilesExplorer').innerHTML=folderHTML+artHTML||'<p class="muted">Nenhum item nesta pasta.</p>';
  document.getElementById('tilesExplorer').style.display=areaDetalhes?'none':'grid';
