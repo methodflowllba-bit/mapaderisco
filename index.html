@@ -266,13 +266,24 @@ async function importarArquivo(e){
   if(!registros.length||!registros.every(d=>d&&d.header&&typeof d.header==='object'&&Array.isArray(d.passos)))throw Error('Estrutura de ART inválida.');
   const vazio=registros.every(d=>!d.header.Tarefa&&!d.header.Unidade&&!d.header.Setor&&d.passos.every(p=>!p.descricao&&!p.perigo&&!p.risco));
   if(vazio&&!confirm('O arquivo contém somente uma ART sem dados preenchidos. Deseja importá-la mesmo assim?'))return;
-  const docs=todasArts(),novos=[];
+  const docs=todasArts(),novos=[],folderMapping={};
+  const existingFolders=todasPastas();
+  if(conteudo&&conteudo.folders&&typeof conteudo.folders==='object'&&!Array.isArray(conteudo.folders)){
+   const importedFolders=Object.values(conteudo.folders).filter(f=>f&&typeof f.id==='string'&&typeof f.name==='string');
+   for(const f of importedFolders)folderMapping[f.id]=crypto.randomUUID();
+   for(const f of importedFolders){
+    const newid=folderMapping[f.id];
+    existingFolders[newid]={id:newid,name:f.name,parent:folderMapping[f.parent]||null,created:f.created||new Date().toISOString()};
+   }
+  }
   for(const d of registros){
    const novoId=crypto.randomUUID();
-   const item={id:novoId,header:{...d.header},passos:d.passos.map(p=>({...p})),folderId:d.folderId&&todasPastas()[d.folderId]?d.folderId:null,atualizado:new Date().toISOString()};
+   const destination=folderMapping[d.folderId]||((d.folderId&&existingFolders[d.folderId])?d.folderId:null);
+   const item={id:novoId,header:{...d.header},passos:d.passos.map(p=>({...p})),folderId:destination,atualizado:new Date().toISOString()};
    docs[novoId]=item;novos.push(item);
   }
   if(!guardarArts(docs))return;
+  if(Object.keys(folderMapping).length&&!guardarPastas(existingFolders))alert('As ARTs foram importadas, mas houve falha ao salvar a estrutura de pastas.');
   const ultima=novos[novos.length-1];
   id=ultima.id;header=ultima.header;passos=ultima.passos;
   desenhar();historico();renderExplorer();
