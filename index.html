@@ -218,7 +218,7 @@ function renderExplorer(){
  document.getElementById('totalFiltrado').textContent=showingFolders.length+' pasta(s), '+docs.length+' ART(s)';
  document.getElementById('selecaoExplorer').textContent=selecionado?'Selecionado: '+(selecionado.type==='folder'?'Pasta':'ART'):'Nenhuma seleção';
  const folderHTML=showingFolders.map(f=>'<div role="button" tabindex="0" class="explorer-item '+(selecionado?.type==='folder'&&selecionado.id===f.id?'selected':'')+'" ondragover="permitirSoltarART(event)" ondragleave="sairDestinoART(event)" ondrop="soltarART(event,'+atributoId(f.id)+')" onclick="abrirSelecionado(\'folder\','+atributoId(f.id)+')" ><span class="glyph">📁</span><span class="item-name">'+esc(f.name)+'</span><span class="item-meta">Pasta</span><button class="item-open" onclick="event.stopPropagation();abrirSelecionado(\'folder\','+atributoId(f.id)+')">Abrir</button></div>').join('');
- const artHTML=docs.map(d=>{let h=d.header||{};return '<div role="button" tabindex="0" class="explorer-item '+(selecionado?.type==='art'&&selecionado.id===d.id?'selected':'')+'" draggable="true" ondragstart="iniciarArrasteART(event,'+atributoId(d.id)+')" onclick="selecionarItem(\'art\','+atributoId(d.id)+')" ondblclick="abrirSelecionado(\'art\','+atributoId(d.id)+')"><span class="glyph">📋</span><span class="item-name">'+esc(h.Tarefa||h['Código ART']||'ART sem título')+'</span><span class="item-meta">'+esc(h.Data||'Sem data')+'</span><label class="explorer-check" onclick="event.stopPropagation()"><input type="checkbox" onchange="event.stopPropagation();selecionarItem(&quot;art&quot;,this.dataset.id)" data-id="'+esc(d.id)+'" '+(selecionado?.type==='art'&&selecionado.id===d.id?'checked':'')+'> Selecionar</label><button class="item-open" onclick="event.stopPropagation();abrirSelecionado(\'art\','+atributoId(d.id)+')">Abrir ART</button></div>'}).join('');
+ const artHTML=docs.map(d=>{let h=d.header||{};return '<div role="button" tabindex="0" class="explorer-item '+(selecionado?.type==='art'&&selecionado.id===d.id?'selected':'')+'" draggable="true" ondragstart="iniciarArrasteART(event,'+atributoId(d.id)+')" onclick="selecionarItem(\'art\','+atributoId(d.id)+')" ondblclick="abrirSelecionado(\'art\','+atributoId(d.id)+')"><span class="glyph">📋</span><span class="item-name">'+esc(h.Tarefa||h['Código ART']||'ART importada — sem título')+'</span><span class="item-meta">'+esc(h.Data||'Sem data')+'</span><label class="explorer-check" onclick="event.stopPropagation()"><input type="checkbox" onchange="event.stopPropagation();selecionarItem(&quot;art&quot;,this.dataset.id)" data-id="'+esc(d.id)+'" '+(selecionado?.type==='art'&&selecionado.id===d.id?'checked':'')+'> Selecionar</label><button class="item-open" onclick="event.stopPropagation();abrirSelecionado(\'art\','+atributoId(d.id)+')">Abrir ART</button></div>'}).join('');
  document.getElementById('tilesExplorer').innerHTML=folderHTML+artHTML||'<p class="muted">Nenhum item nesta pasta.</p>';
  document.getElementById('tilesExplorer').style.display=areaDetalhes?'none':'grid';
  document.getElementById('detailsExplorer').style.display=areaDetalhes?'block':'none';
@@ -287,8 +287,13 @@ async function importarArquivo(e){
   if(Object.keys(folderMapping).length&&!guardarPastas(existingFolders))alert('As ARTs foram importadas, mas houve falha ao salvar a estrutura de pastas.');
   const ultima=novos[novos.length-1];
   id=ultima.id;header=ultima.header;passos=ultima.passos;
-  desenhar();historico();renderExplorer();
-  alert(novos.length+' ART(s) importada(s) e salva(s) no Explorador. Abra Explorador de ARTs para localizar. Registros anteriores foram preservados.');
+  desenhar();historico();
+  pastaAtual=null;selecionado=null;
+  document.getElementById('buscaArt').value='';
+  document.getElementById('filtroDe').value='';
+  document.getElementById('filtroAte').value='';
+  abrirExplorador();
+  alert(novos.length+' ART(s) importada(s). O Explorador foi aberto na raiz, sem filtros. '+(vazio?'Atenção: o arquivo contém apenas ART sem preenchimento.':'Registros anteriores preservados.'));
  }catch(erro){alert('Falha na importação: '+(erro.message||'JSON inválido'))}
  finally{e.target.value=''}
 }function foto(e,i){let f=e.target.files[0];if(!f)return;if(f.size>1500000){alert('Imagem muito grande. Use foto até 1,5 MB para armazenamento local.');return}let r=new FileReader();r.onload=()=>{capture();passos[i].foto=r.result;desenhar()};r.readAsDataURL(f)}let cameraStream=null,cameraPasso=null;
