@@ -26,7 +26,7 @@ body.explorer-open{overflow:hidden}
 <div class="explorer-window">
  <div class="explorer-head"><strong>📁 Explorador de arquivos — ARTs</strong><button class="explorer-close" onclick="fecharExplorador()">Fechar ✕</button></div>
  <div class="explorer-tools">
-  <button onclick="pastaAcima()">↑ Pasta acima</button><button onclick="criarPasta(pastaAtual)">＋ Nova pasta</button><button onclick="copiarSelecionado(false)">Copiar</button><button onclick="copiarSelecionado(true)">Recortar / mover</button><button onclick="colarSelecionado()">Colar</button><button onclick="renomearSelecionado()">Renomear</button><button onclick="excluirSelecionado()">Excluir</button><button onclick="salvarArtNaPasta()">💾 Salvar ART atual aqui</button><button onclick="renderExplorer()">Atualizar</button><button onclick="alternarDetalhes()">☷ Detalhes</button><button onclick="baixarExcel()">⬇ Excel (.xlsx)</button>
+  <button onclick="pastaAcima()">↑ Pasta acima</button><button onclick="criarPasta(pastaAtual)">＋ Nova pasta</button><button onclick="copiarSelecionado(false)">Copiar</button><button onclick="copiarSelecionado(true)">Recortar / mover</button><button onclick="moverSelecionadoDireto()" style="background:#0b63bd;color:#fff;border-radius:5px;padding:8px 12px">📁 Mover para pasta...</button><button onclick="colarSelecionado()">Colar</button><button onclick="renomearSelecionado()">Renomear</button><button onclick="excluirSelecionado()">Excluir</button><button onclick="salvarArtNaPasta()">💾 Salvar ART atual aqui</button><button onclick="renderExplorer()">Atualizar</button><button onclick="alternarDetalhes()">☷ Detalhes</button><button onclick="baixarExcel()">⬇ Excel (.xlsx)</button>
  </div>
  <div class="explorer-filters"><div id="caminhoExplorer" class="explorer-path"></div><input id="buscaArt" oninput="renderExplorer()" placeholder="Buscar em todas as pastas"><label>De <input type="date" id="filtroDe" onchange="renderExplorer()"></label><label>Até <input type="date" id="filtroAte" onchange="renderExplorer()"></label><select id="ordenarArt" onchange="renderExplorer()"><option value="recente">Recentes</option><option value="antigo">Antigas</option><option value="nome">Nome</option></select><button class="secondary" onclick="limparFiltrosArt()">Limpar</button></div>
  <div class="explorer-workspace"><aside class="explorer-sidebar"><div id="arvorePastas"></div></aside><div class="explorer-content"><div class="explorer-tiles" id="tilesExplorer"></div><div class="explorer-details" id="detailsExplorer" style="display:none"><table><thead><tr><th>Arquivo</th><th>Data</th><th>Setor</th><th>Pasta</th><th>Ações</th></tr></thead><tbody id="arquivosArt"></tbody></table></div></div></div>
@@ -124,6 +124,24 @@ function excluirSelecionado(){
 }
 function selecionarItem(tipo,fid){selecionado={type:tipo,id:fid};renderExplorer()}
 function abrirSelecionado(tipo,fid){if(tipo==='folder')selecionarPasta(fid);else abrirArtExplorer(fid)}
+function moverSelecionadoDireto(){
+ if(!selecionado)return alert('Primeiro marque a caixa Selecionar da ART.');
+ if(selecionado.type!=='art')return alert('Esta opção move uma ART. Para pastas, use Recortar e Colar.');
+ const ds=todasArts(),fs=todasPastas(),doc=ds[selecionado.id];
+ if(!doc)return alert('ART não encontrada. Atualize o explorador.');
+ const options=[{id:'__root__',label:'Todas as pastas (raiz)'},...Object.values(fs).map(f=>({id:f.id,label:f.name}))];
+ let lista=options.map((o,i)=>(i+1)+' - '+o.label).join('\n');
+ const resposta=prompt('Mover ART: '+(doc.header?.Tarefa||'Sem tarefa')+'\n\nEscolha o número da pasta de destino:\n'+lista+'\n\nDigite o número:');
+ if(resposta===null)return;
+ let indice=Number(resposta.trim())-1;
+ if(!Number.isInteger(indice)||!options[indice])return alert('Selecione um número válido da lista.');
+ const alvo=options[indice].id,destino=alvo==='__root__'?null:alvo;
+ if((doc.folderId||null)===destino)return alert('Esta ART já está na pasta selecionada.');
+ doc.folderId=destino;
+ if(!guardarArts(ds))return;
+ clipboardExplorer=null;selecionado=null;historico();renderExplorer();
+ alert('ART movida com sucesso para: '+options[indice].label);
+}
 function copiarSelecionado(cut){
  if(!selecionado)return alert('Selecione uma pasta ou uma ART.');
  clipboardExplorer={...selecionado,cut};renderExplorer();
