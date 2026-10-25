@@ -8,6 +8,6 @@ window.MF_AUTH_CONFIG = {
   projectSlug: 'p_4c359bf39f',
   anonKey: '',
   enabled: false, // liberar somente após testar autenticação, tabelas e RLS
-  // Endpoint HTTPS SEPARADO para criação de contas e códigos, ainda não implantado.
+  // Endpoint HTTPS SEPARADO peyJhbGciOiJFUzI1NiIsImtpZCI6ImRwa18yNjA2XzY1NzMwNTM2IiwidHlwIjoiSldUIn0.eyJyb2xlIjoiYW5vbiIsInByb2plY3RfaWQiOiIxOGUzMTZhNi1mODAwLTQ0ZDUtYWFjZC0zNjBkYjY1MzVmZjYiLCJwcm9qZWN0X3NjaGVtYSI6InByb2pfcF80YzM1OWJmMzlmIiwia3YiOjEsInN1YiI6ImFwaWtleTphbm9uIiwiaWF0IjoxNzkyNzQ5MzA4LCJpc3MiOiJodHRwczovL2F1dGguc3VwZXJkYi5jb20uYnIiLCJhdWQiOiJodHRwczovL2FwaS5zdXBlcmRiLmNvbS5iciJ9.TgDGBHg5i9xdG7nZC5xVrYwIAHGy3rdjUPzHs2aVNoPEVy-yHP6Q0tLd6jcrq1CFNpY5lCoSvozFdV_iCAIkcgara criação de contas e códigos, ainda não implantado.
   adminApiUrl: ''
 };
