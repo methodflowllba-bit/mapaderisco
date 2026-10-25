@@ -7,16 +7,26 @@
 <main class="test-container">
 <h2>Diagnóstico do login</h2>
 <p>Esta página valida o acesso ao SuperDB e o perfil `principal`. Ela não altera as auditorias salvas no navegador.</p>
-<div id="mf-test-status" class="test-warning">Preparando interface de login...</div>
+<div id="mf-test-status" class="test-warning">A chave pública ainda não foi configurada. Você pode testá-la aqui sem gravá-la no GitHub.</div>
+<div id="mf-test-setup"><label for="mf-anon-input">Chave pública ANON do projeto (não use service_role)</label>
+<textarea id="mf-anon-input" rows="3" spellcheck="false" placeholder="Cole apenas a chave pública anon" style="display:block;width:100%;box-sizing:border-box;margin:10px 0;padding:10px;resize:vertical"></textarea>
+<button type="button" id="mf-start-test">Testar acesso do administrador</button></div>
 <p><a href="./">Voltar ao Mapa de Risco</a></p>
 </main>
 <script src="./auth-config.js"></script>
 <script>
-window.MF_AUTH_CONFIG=Object.assign({},window.MF_AUTH_CONFIG,{enabled:true});
-const configured=Boolean(window.MF_AUTH_CONFIG.anonKey);
-document.getElementById('mf-test-status').textContent=configured
- ? 'Configuração pública encontrada. Entre com sua conta para testar a sessão e o perfil.'
- : 'A chave pública anon ainda não foi configurada em auth-config.js. Preencha-a antes de testar.';
+const cfg=window.MF_AUTH_CONFIG||{};
+const status=document.getElementById('mf-test-status');
+const field=document.getElementById('mf-anon-input');
+if(cfg.anonKey)field.value=cfg.anonKey;
+document.getElementById('mf-start-test').onclick=()=>{
+ const key=field.value.trim();
+ if(!key||key.split('.').length!==3){status.textContent='Informe a chave pública ANON completa (formato JWT com três partes).';return}
+ window.MF_AUTH_CONFIG={...cfg,enabled:true,anonKey:key};
+ field.value='';document.getElementById('mf-test-setup').style.display='none';
+ status.textContent='Iniciando autenticação de teste...';
+ const script=document.createElement('script');script.type='module';script.src='./auth-ui.js';script.onerror=()=>status.textContent='Não foi possível carregar o módulo de autenticação.';
+ document.body.appendChild(script);
+};
 </script>
-<script type="module" src="./auth-ui.js"></script>
 </body></html>
