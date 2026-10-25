@@ -68,6 +68,20 @@ header{flex-wrap:wrap}
 .header-risk-guide .risk-guide-total{background:#ecf3fc;font-weight:700}
 .header-risk-guide>small{display:block;padding:6px 12px;color:#52657b}
 @media(max-width:600px){.header-risk-guide th,.header-risk-guide td{padding:5px;font-size:11px}}
+
+.pr-overlay{position:fixed;inset:0;z-index:3000;background:#05142bd9;padding:12px;align-items:center;justify-content:center}
+.pr-box{width:min(1350px,98vw);height:min(900px,96vh);background:#fff;border-radius:10px;display:flex;flex-direction:column;overflow:hidden}
+.pr-head{background:#175c98;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;font-size:17px}
+.pr-tools{display:flex;align-items:end;gap:10px;flex-wrap:wrap;padding:11px;border-bottom:1px solid #d4dfec}
+.pr-tools>label{font-size:12px}.pr-tools select{margin-top:4px;min-width:165px}
+.pr-tools .pr-check{display:flex;align-items:center;gap:6px;padding-bottom:8px}.pr-tools .pr-check input{width:16px;height:16px}
+.pr-breaks{border-bottom:1px solid #d4dfec;padding:10px;max-height:130px;overflow:auto}
+#prBreakList{display:flex;flex-wrap:wrap;gap:15px;margin-top:8px}
+#prBreakList label{display:flex;align-items:center;gap:5px;font-size:12px}
+#prBreakList input{width:16px;height:16px}
+.pr-hint{padding:7px 12px;margin:0}
+#prPreview{border:0;width:100%;min-height:0;flex:1;background:#d9e0e8}
+@media(max-width:650px){.pr-head{font-size:14px}.pr-tools{max-height:240px;overflow:auto}.pr-box{height:98vh}.pr-tools select{min-width:125px}}
 </style></head><body><header><img src="method-flow.png" alt="Method Flow"><div><h1>ART · Análise de Risco da Tarefa</h1><small>Method Flow | FO-EHS-37 · Matriz Safhear</small></div><button class="config-header no-print" type="button" onclick="abrirConfiguracao()">⚙ Configuração</button>
 <details class="header-risk-guide no-print" open><summary>📊 Classificação do risco — guia do auditor</summary>
 <div class="header-risk-scroll"><table aria-label="Faixas e resumo dos riscos da ART"><thead><tr><th>Classificação</th><th>Faixa NR (referência)</th><th>Itens</th><th>Soma NR</th></tr></thead><tbody>
@@ -77,7 +91,17 @@ header{flex-wrap:wrap}
 <tr><td><span class="risk-color" style="background:#111"></span>Muito crítico</td><td>600–1000</td><td id="cabNRCount3">0</td><td id="cabNRSum3">0</td></tr>
 <tr class="risk-guide-total"><td colspan="2">Soma total</td><td id="cabNRCountTotal">0</td><td id="cabNRSumTotal">0</td></tr></tbody></table></div>
 <small>Referência da matriz fornecida. Os totais exibidos são calculados com os valores atuais da ART.</small>
-</details></header><div id="configuracaoART" class="config-overlay no-print" role="dialog" aria-modal="true" aria-label="Configuração das listas" style="display:none">
+</details></header><div id="prModal" class="pr-overlay no-print" role="dialog" aria-modal="true" style="display:none">
+<div class="pr-box"><div class="pr-head"><strong>🖨 Configurar impressão da auditoria</strong><button class="secondary" onclick="printSetup.close()">Fechar ✕</button></div>
+<div class="pr-tools"><label>Orientação<select id="prOrientation" onchange="printSetup.preview()"><option value="portrait">Retrato A4</option><option value="landscape">Paisagem A4</option></select></label>
+<label>Paginação<select id="prMode" onchange="printSetup.mode()"><option value="auto">Automática</option><option value="single">Ajustar em 1 página</option><option value="manual">Quebras manuais</option></select></label>
+<label class="pr-check"><input id="prChart" type="checkbox" checked onchange="printSetup.preview()"> Gráfico dos resultados</label>
+<label class="pr-check"><input id="prPhotos" type="checkbox" checked onchange="printSetup.preview()"> Fotografias</label>
+<button class="secondary" onclick="printSetup.preview()">Atualizar prévia</button>
+<button onclick="printSetup.print()">Imprimir / Salvar PDF</button></div>
+<div id="prBreaks" class="pr-breaks" style="display:none"><b>Iniciar nova página antes de:</b><div id="prBreakList"></div></div>
+<p class="muted pr-hint">Prévia ilustrativa. Em “Ajustar em 1 página”, conteúdos extensos podem ficar muito pequenos. O navegador e a impressora podem alterar a escala ou margens. Para PDF, escolha “Salvar como PDF” na impressão.</p>
+<iframe id="prPreview" title="Prévia da impressão" sandbox="allow-same-origin allow-modals"></iframe></div></div><div id="configuracaoART" class="config-overlay no-print" role="dialog" aria-modal="true" aria-label="Configuração das listas" style="display:none">
  <section class="config-window">
   <div class="config-top"><h2>⚙ Configuração — Listas da ART</h2><button type="button" onclick="fecharConfiguracao()" class="secondary">Fechar ✕</button></div>
   <p class="muted">Inclua, renomeie ou exclua opções de preenchimento das ARTs. As modificações nas listas não apagam informações já registradas nas auditorias.</p>
@@ -93,7 +117,7 @@ header{flex-wrap:wrap}
   </div>
   <p class="muted">As configurações ficam salvas neste navegador. Para utilizar as mesmas listas em vários aparelhos será necessário armazenamento compartilhado.</p>
  </section>
-</div><main><div class="row no-print"><h2>Mapa de Risco</h2><div><button onclick="novo()" class="secondary">Nova ART</button><button onclick="salvar()">Salvar</button><button onclick="abrirExplorador()" class="secondary">📁 Explorador de ARTs</button><button onclick="exportar()" class="secondary">Exportar JSON</button><button onclick="exportarBase()" class="secondary">Backup da base JSON</button><button onclick="document.getElementById('importar').click()" class="secondary">Importar JSON</button><input id="importar" type="file" accept="application/json" hidden onchange="importarArquivo(event)"><button onclick="window.print()">Imprimir / PDF</button></div></div><div id="explorador" class="explorer-overlay no-print" role="dialog" aria-modal="true" aria-label="Explorador de arquivos" style="display:none">
+</div><main><div class="row no-print"><h2>Mapa de Risco</h2><div><button onclick="novo()" class="secondary">Nova ART</button><button onclick="salvar()">Salvar</button><button onclick="abrirExplorador()" class="secondary">📁 Explorador de ARTs</button><button onclick="exportar()" class="secondary">Exportar JSON</button><button onclick="exportarBase()" class="secondary">Backup da base JSON</button><button onclick="document.getElementById('importar').click()" class="secondary">Importar JSON</button><input id="importar" type="file" accept="application/json" hidden onchange="importarArquivo(event)"><button onclick="printSetup.open()">🖨 Configurar impressão / PDF</button></div></div><div id="explorador" class="explorer-overlay no-print" role="dialog" aria-modal="true" aria-label="Explorador de arquivos" style="display:none">
 <div class="explorer-window">
  <div class="explorer-head"><strong>📁 Explorador de arquivos — ARTs</strong><button class="explorer-close" onclick="fecharExplorador()">Fechar ✕</button></div>
  <div class="explorer-tools">
@@ -546,4 +570,4 @@ function fotografar(){
  fecharCamera();desenhar();
 }
 fetch('listas.json').then(r=>{if(!r.ok)throw Error('Não foi possível carregar listas.json');return r.json()}).then(d=>{carregarListasEditaveis(d);novoInicial()}).catch(()=>{carregarListasEditaveis({});alert('Não foi possível carregar as listas iniciais. Verifique o GitHub Pages.');novoInicial()});function novoInicial(){header={'Data':new Date().toLocaleDateString('en-CA'),'Revisão':'00'};passos=[{status:'Pendente'}];desenhar();historico()}
-</script></body></html>
+</script><script src="print-report.js"></script></body></html>
