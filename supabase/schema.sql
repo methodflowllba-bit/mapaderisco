@@ -17,6 +17,7 @@ create table if not exists public.art_pending_users (
   active boolean not null default false,
   code_hash text,
   code_expires timestamptz,
+  failed_attempts integer not null default 0,
   claimed_at timestamptz,
   created_by uuid references auth.users(id),
   created_at timestamptz not null default now()
@@ -68,3 +69,6 @@ using (public.art_current_active() and (public.art_current_admin() or created_by
 -- where lower(email)='alvaro.batistella@method-flow.com'
 -- on conflict (id) do update set role='principal',active=true;
 -- ATENÇÃO: não use a chave service_role no GitHub Pages.
+
+-- Para projetos que já criaram a tabela antes desta alteração:
+alter table public.art_pending_users add column if not exists failed_attempts integer not null default 0;
