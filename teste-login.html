@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Method Flow | Teste de login SuperDB</title>
+<style>body{font-family:Arial,sans-serif;background:#eef3f9;color:#122743;margin:0}.test-header{background:#071c43;color:white;padding:24px}.test-container{max-width:820px;background:white;border-radius:12px;padding:24px;margin:36px auto;box-shadow:0 4px 20px #0001}a{color:#085ba7}button{padding:10px 16px;border-radius:6px;background:#0862c5;color:#fff;border:0;cursor:pointer}.secondary{background:#e6edf7;color:#132f50}.test-warning{padding:14px;background:#fff3d4;border-radius:8px;margin-top:14px}</style>
+</head><body>
+<header class="test-header"><h1>Method Flow — Teste de Autenticação</h1><p>Ambiente de verificação da conexão com SuperDB</p></header>
+<main class="test-container">
+<h2>Diagnóstico do login</h2>
+<p>Esta página valida o acesso ao SuperDB e o perfil `principal`. Ela não altera as auditorias salvas no navegador.</p>
+<div id="mf-test-status" class="test-warning">Preparando interface de login...</div>
+<p><a href="./">Voltar ao Mapa de Risco</a></p>
+</main>
+<script src="./auth-config.js"></script>
+<script>
+window.MF_AUTH_CONFIG=Object.assign({},window.MF_AUTH_CONFIG,{enabled:true});
+const configured=Boolean(window.MF_AUTH_CONFIG.anonKey);
+document.getElementById('mf-test-status').textContent=configured
+ ? 'Configuração pública encontrada. Entre com sua conta para testar a sessão e o perfil.'
+ : 'A chave pública anon ainda não foi configurada em auth-config.js. Preencha-a antes de testar.';
+</script>
+<script type="module" src="./auth-ui.js"></script>
+</body></html>
