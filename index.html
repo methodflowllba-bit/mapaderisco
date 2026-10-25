@@ -128,22 +128,16 @@ header{flex-wrap:wrap}
  <div class="explorer-footer"><span id="pastaTitulo">Todas as pastas</span> · <span id="totalFiltrado"></span><span id="selecaoExplorer">Nenhuma seleção</span><span class="muted">Armazenamento local deste navegador — exporte backups regularmente</span></div>
 </div></div><section class="panel"><h2>Identificação da tarefa</h2><div class="grid" id="cabecalho"></div></section><section class="panel"><div class="row"><h2>Etapas, perigos e controles</h2><button onclick="adicionar()">+ Adicionar passo</button></div><div id="passos"></div></section><section class="panel"><h2>Classificação dos riscos</h2><p class="muted">NR = Probabilidade × Severidade. Faixas reproduzidas do modelo fornecido; valide a metodologia antes de uso operacional.</p><div id="resumo"></div></section><section class="panel no-print" id="saved"><h2>ARTs salvas neste navegador</h2><div id="historico"></div><p class="muted">Os registros ficam apenas neste navegador/dispositivo. Para backup ou transferência, use Exportar JSON. Não há sincronização entre usuários.</p></section></main><div id="cameraModal" role="dialog" aria-label="Tirar fotografia" style="display:none;position:fixed;inset:0;background:#000d;z-index:1000;align-items:center;justify-content:center;padding:16px"><div style="background:white;padding:16px;border-radius:12px;width:min(96vw,650px)"><h2>Fotografar etapa</h2><video id="cameraVideo" autoplay playsinline muted style="width:100%;max-height:65vh;background:black;border-radius:8px"></video><div class="row"><button type="button" onclick="fotografar()">📷 Capturar foto</button><button type="button" class="secondary" onclick="fecharCamera()">Cancelar</button></div></div></div><script>
 async function sairDoMapaDeRisco(){
- const btn=document.getElementById('mfLogoutHeader');
- const auth=window.MethodFlowAuth?.supabase;
- if(!auth){
-  alert('O login ainda não foi ativado: é necessário concluir a configuração do SuperDB. O botão Sair ficará funcional após a autenticação ser conectada.');
+ const auth=window.MethodFlowAuth;
+ if(!auth?.client){
+  alert('O login SuperDB ainda não está ativado ou configurado. Termine os testes e informe a chave anon pública no arquivo auth-config.js.');
   return;
  }
- if(!confirm('Deseja encerrar sua sessão? Dados não salvos na ART atual poderão ser perdidos.'))return;
- try{
-  if(btn)btn.disabled=true;
-  const {error}=await auth.auth.signOut();
-  if(error)throw error;
-  location.reload();
- }catch(err){
-  alert('Não foi possível sair: '+(err?.message||'erro de autenticação'));
-  if(btn)btn.disabled=false;
- }
+ if(!confirm('Deseja sair do Method Flow? Alterações não salvas poderão ser perdidas.'))return;
+ const btn=document.getElementById('mfLogoutHeader');
+ try{if(btn)btn.disabled=true;await auth.signOut();}
+ catch(err){alert('Não foi possível encerrar a sessão: '+(err?.message||'erro desconhecido'))}
+ finally{if(btn)btn.disabled=false}
 }
 let listas={},passos=[],id=crypto.randomUUID();const campos=['Unidade','Setor','Data','Tarefa','Função/Cargo','Responsável','Código ART','Revisão'];let header={};const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const opts=(key,value)=>'<option value="">Selecione</option>'+[...new Set([...(listas[key]||[]),...(value?[value]:[])])].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR',{sensitivity:'base',numeric:true})).map(v=>`<option ${String(v)===String(value)?'selected':''}>${esc(v)}</option>`).join('');function nivel(n){return n<16?['Aceitável','ok']:n<=168?['Menos crítico','moderate']:n<=400?['Crítico','high']:['Muito crítico','critical']}function capture(){document.querySelectorAll('[data-header]').forEach(e=>header[e.dataset.header]=e.value);document.querySelectorAll('[data-step]').forEach(e=>{let [i,k]=e.dataset.step.split(':');if(passos[i])passos[i][k]=e.value});document.querySelectorAll('[data-av]').forEach(e=>{const [i,j,k]=e.dataset.av.split(':');if(passos[i]?.avaliacoes?.[j])passos[i].avaliacoes[j][k]=e.value})}
 const ordenarTemas=itens=>[...itens].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR',{sensitivity:'base',numeric:true}));
