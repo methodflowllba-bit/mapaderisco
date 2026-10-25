@@ -19,14 +19,28 @@ const cfg=window.MF_AUTH_CONFIG||{};
 const status=document.getElementById('mf-test-status');
 const field=document.getElementById('mf-anon-input');
 if(cfg.anonKey)field.value=cfg.anonKey;
-document.getElementById('mf-start-test').onclick=()=>{
+const diagnostic=document.createElement('pre');
+diagnostic.id='mf-diagnostic';
+diagnostic.style='white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;color:#9d2331;background:#fff5f6;padding:10px;border-radius:7px;display:none';
+status.insertAdjacentElement('afterend',diagnostic);
+const report=message=>{status.textContent=message;diagnostic.textContent=message;diagnostic.style.display='block'};
+const withDeadline=(promise,ms)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Tempo de carregamento esgotado ('+Math.round(ms/1000)+'s)')),ms))]);
+document.getElementById('mf-start-test').onclick=async()=>{
  const key=field.value.trim();
- if(!key||key.split('.').length!==3){status.textContent='Informe a chave pública ANON completa (formato JWT com três partes).';return}
+ if(!key||key.split('.').length!==3){report('Informe a chave pública ANON completa (formato JWT com três partes).');return}
  window.MF_AUTH_CONFIG={...cfg,enabled:true,anonKey:key};
  field.value='';document.getElementById('mf-test-setup').style.display='none';
- status.textContent='Iniciando autenticação de teste...';
- const script=document.createElement('script');script.type='module';script.src='./auth-ui.js';script.onerror=()=>status.textContent='Não foi possível carregar o módulo de autenticação.';
- document.body.appendChild(script);
+ status.textContent='Verificando o arquivo auth-ui.js...';
+ try{
+   const source=await withDeadline(fetch('./auth-ui.js?v=20261025-2',{cache:'no-store'}),10000);
+   if(!source.ok)throw new Error('O GitHub Pages retornou HTTP '+source.status+' para auth-ui.js. Confira a publicação da branch main.');
+   status.textContent='Arquivo encontrado. Carregando SDK do SuperDB...';
+   await withDeadline(import('./auth-ui.js?v=20261025-2'),24000);
+   if(!document.getElementById('mfAuthOverlay'))report('O módulo carregou, mas a tela de login não foi iniciada. Abra F12 > Console.');
+ }catch(error){
+   report('Falha no módulo de autenticação: '+(error?.message||String(error))+'. Abra F12 > Console para detalhes.');
+   console.error('Method Flow - diagnóstico de login',error);
+ }
 };
 </script>
 </body></html>
