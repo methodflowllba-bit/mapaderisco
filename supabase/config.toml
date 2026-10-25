@@ -1,0 +1,2 @@
+[functions.art-access]
+verify_jwt = false
