@@ -60,7 +60,7 @@ function alterarMulti(i,k,index,checked){
 function adicionarMulti(i,k){
  capture();
  const valor=prompt('Digite outra informação para este campo:');if(!valor||!valor.trim())return;
- const trimmed=valor.trim().replace(/\\s*\\|\\s*/g,' / ');
+ const trimmed=valor.trim().split('|').join(' / ');
  const values=multiValues(passos[i][k]);if(!values.includes(trimmed))values.push(trimmed);
  passos[i][k]=values.join(' | ');multiOpen.add(i+':'+k);desenhar();
 }
