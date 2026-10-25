@@ -1,21 +1,5 @@
-let createClient;
-try {
- const sdk=await import('https://esm.sh/@superdb/client?bundle');
- if(typeof sdk.createClient!=='function')throw Error('O módulo não exporta createClient.');
- createClient=sdk.createClient;
-} catch (firstError) {
- try {
-  const sdk=await import('https://cdn.jsdelivr.net/npm/@superdb/client/+esm');
-  if(typeof sdk.createClient!=='function')throw Error('O CDN alternativo não exporta createClient.');
-  createClient=sdk.createClient;
- } catch(secondError) {
-  const el=document.getElementById('mf-test-status');
-  if(el)el.textContent='Falha ao carregar SDK SuperDB: '+String(secondError?.message||secondError)+'. Verifique a rede, a versão publicada e o console (F12).';
-  console.error('SuperDB SDK:',firstError,secondError);
- }
-}
 const cfg=window.MF_AUTH_CONFIG||{};
-if(createClient&&cfg.provider==='superdb'&&cfg.enabled===true){
+if(cfg.provider==='superdb'&&cfg.enabled===true){
  const root=document.createElement('div');root.id='mfAuthOverlay';root.className='mf-auth-overlay';
  root.innerHTML='<section class="mf-auth-panel"><h2>Method Flow — Mapa de Risco</h2><p id="mfStatus"></p><div id="mfAuthBody"></div></section>';
  const style=document.createElement('style');
@@ -36,6 +20,7 @@ if(createClient&&cfg.provider==='superdb'&&cfg.enabled===true){
    $('mfSignIn').onclick=async()=>{
     const btn=$('mfSignIn');btn.disabled=true;
     try{
+     if(!client)throw Error('Conexão ainda indisponível. Verifique o diagnóstico do SDK.');
      const email=$('mfEmail').value.trim().toLowerCase(),password=$('mfPassword').value;
      if(!email||!password)throw Error('Preencha e-mail e senha.');
      const {error}=await client.auth.signInWithPassword({email,password});
@@ -87,11 +72,40 @@ if(createClient&&cfg.provider==='superdb'&&cfg.enabled===true){
   }catch(e){status('Erro ao listar usuários: '+e.message,true)}
  }
  window.MethodFlowAuth={get client(){return client},get profile(){return profile},signOut,showUsers};
- if(!cfg.anonKey||!cfg.projectId||!cfg.url){
-  status('Falta configurar a chave pública anon em auth-config.js.',true);
-  $('mfAuthBody').textContent='Login não ativado: configure a conexão antes de liberar o sistema.';
- }else{
-  try{client=createClient(cfg.url,cfg.anonKey,{project:cfg.projectId});checkSession().catch(e=>{login();status(e.message,true)})}
-  catch(e){status('Erro no SDK: '+e.message,true)}
+ const diagnostic=document.getElementById('mf-test-status');
+ const info=message=>{if(diagnostic)diagnostic.textContent=message;status(message)};
+ const withTimeout=(promise,ms,label)=>new Promise((resolve,reject)=>{
+   const timeout=setTimeout(()=>reject(new Error(label+' excedeu o tempo limite de '+Math.round(ms/1000)+' segundos.')),ms);
+   Promise.resolve(promise).then(v=>{clearTimeout(timeout);resolve(v)},e=>{clearTimeout(timeout);reject(e)});
+ });
+ async function initializeSdk(){
+   login();
+   if(!cfg.anonKey||!cfg.projectId||!cfg.url){
+     info('Configure a chave pública anon do SuperDB para testar o login.');
+     return;
+   }
+   info('Carregando biblioteca SuperDB…');
+   let factory=null,errors=[];
+   for(const source of ['https://esm.sh/@superdb/client?bundle','https://cdn.jsdelivr.net/npm/@superdb/client/+esm']){
+     try{
+       const module=await withTimeout(import(source),9000,'Carregamento do SDK');
+       if(typeof module.createClient!=='function')throw Error('Exportação createClient não encontrada');
+       factory=module.createClient;break;
+     }catch(error){errors.push(error.message||String(error));console.warn('Erro SDK SuperDB:',source,error)}
+   }
+   if(!factory){
+     info('Não foi possível carregar o SDK: '+errors.join(' / ')+'. Abra o console com F12 para detalhes.');
+     return;
+   }
+   try{
+     client=factory(cfg.url,cfg.anonKey,{project:cfg.projectId});
+     info('SDK carregado. Verificando sessão existente…');
+     await withTimeout(checkSession(),10000,'Verificação de sessão');
+     if(!profile)info('SDK conectado. Informe e-mail e senha para entrar.');
+     else info('Sessão autenticada e perfil carregado.');
+   }catch(error){
+     login();info('Não foi possível validar a sessão: '+(error.message||error)+'. Tente entrar ou veja o console.');
+   }
  }
+ initializeSdk().catch(error=>info('Falha ao iniciar autenticação: '+(error.message||error)));
 }
