@@ -1,11 +1,11 @@
 let createClient;
 try {
- const sdk=await import('https://esm.sh/@superdb/client@0.3.0?bundle');
+ const sdk=await import('https://esm.sh/@superdb/client?bundle');
  if(typeof sdk.createClient!=='function')throw Error('O módulo não exporta createClient.');
  createClient=sdk.createClient;
 } catch (firstError) {
  try {
-  const sdk=await import('https://cdn.jsdelivr.net/npm/@superdb/client@0.3.0/+esm');
+  const sdk=await import('https://cdn.jsdelivr.net/npm/@superdb/client/+esm');
   if(typeof sdk.createClient!=='function')throw Error('O CDN alternativo não exporta createClient.');
   createClient=sdk.createClient;
  } catch(secondError) {
