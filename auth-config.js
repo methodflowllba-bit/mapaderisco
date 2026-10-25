@@ -5,8 +5,9 @@ window.MF_AUTH_CONFIG = {
   provider: 'superdb',
   projectId: 'p_4c359bf39f',
   url: 'https://auth.superdb.com.br',
-  projectSlug: '',
+  projectSlug: 'p_4c359bf39f',
   anonKey: '',
+  enabled: false, // liberar somente após testar autenticação, tabelas e RLS
   // Endpoint HTTPS SEPARADO para criação de contas e códigos, ainda não implantado.
   adminApiUrl: ''
 };
