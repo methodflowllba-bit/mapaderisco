@@ -1,6 +1,21 @@
-import { createClient } from 'https://esm.sh/@superdb/client@0.3.0?bundle';
+let createClient;
+try {
+ const sdk=await import('https://esm.sh/@superdb/client@0.3.0?bundle');
+ if(typeof sdk.createClient!=='function')throw Error('O módulo não exporta createClient.');
+ createClient=sdk.createClient;
+} catch (firstError) {
+ try {
+  const sdk=await import('https://cdn.jsdelivr.net/npm/@superdb/client@0.3.0/+esm');
+  if(typeof sdk.createClient!=='function')throw Error('O CDN alternativo não exporta createClient.');
+  createClient=sdk.createClient;
+ } catch(secondError) {
+  const el=document.getElementById('mf-test-status');
+  if(el)el.textContent='Falha ao carregar SDK SuperDB: '+String(secondError?.message||secondError)+'. Verifique a rede, a versão publicada e o console (F12).';
+  console.error('SuperDB SDK:',firstError,secondError);
+ }
+}
 const cfg=window.MF_AUTH_CONFIG||{};
-if(cfg.provider==='superdb'&&cfg.enabled===true){
+if(createClient&&cfg.provider==='superdb'&&cfg.enabled===true){
  const root=document.createElement('div');root.id='mfAuthOverlay';root.className='mf-auth-overlay';
  root.innerHTML='<section class="mf-auth-panel"><h2>Method Flow — Mapa de Risco</h2><p id="mfStatus"></p><div id="mfAuthBody"></div></section>';
  const style=document.createElement('style');
