@@ -81,7 +81,8 @@ header .config-header{margin-left:auto;white-space:nowrap;border:1px solid #9ebd
  <div id="modalMoverART" class="move-layer" style="display:none"><div class="move-dialog"><h3>Mover ART — De → Para</h3><p id="moverNome"></p><label>De</label><p id="moverOrigem"></p><label>Para</label><select id="moverDestino"></select><div class="row"><button class="secondary" onclick="fecharMoverDePara()">Cancelar</button><button onclick="confirmarMoverDePara()">Confirmar</button></div></div></div><div class="explorer-workspace"><aside class="explorer-sidebar"><div id="arvorePastas"></div></aside><div class="explorer-content"><div class="explorer-tiles" id="tilesExplorer"></div><div class="explorer-details" id="detailsExplorer" style="display:none"><table><thead><tr><th>Arquivo</th><th>Data</th><th>Setor</th><th>Pasta</th><th>Ações</th></tr></thead><tbody id="arquivosArt"></tbody></table></div></div></div>
  <div class="explorer-footer"><span id="pastaTitulo">Todas as pastas</span> · <span id="totalFiltrado"></span><span id="selecaoExplorer">Nenhuma seleção</span><span class="muted">Armazenamento local deste navegador — exporte backups regularmente</span></div>
 </div></div><section class="panel"><h2>Identificação da tarefa</h2><div class="grid" id="cabecalho"></div></section><section class="panel"><div class="row"><h2>Etapas, perigos e controles</h2><button onclick="adicionar()">+ Adicionar passo</button></div><div id="passos"></div></section><section class="panel"><h2>Classificação dos riscos</h2><p class="muted">NR = Probabilidade × Severidade. Faixas reproduzidas do modelo fornecido; valide a metodologia antes de uso operacional.</p><div id="resumo"></div></section><section class="panel no-print" id="saved"><h2>ARTs salvas neste navegador</h2><div id="historico"></div><p class="muted">Os registros ficam apenas neste navegador/dispositivo. Para backup ou transferência, use Exportar JSON. Não há sincronização entre usuários.</p></section></main><div id="cameraModal" role="dialog" aria-label="Tirar fotografia" style="display:none;position:fixed;inset:0;background:#000d;z-index:1000;align-items:center;justify-content:center;padding:16px"><div style="background:white;padding:16px;border-radius:12px;width:min(96vw,650px)"><h2>Fotografar etapa</h2><video id="cameraVideo" autoplay playsinline muted style="width:100%;max-height:65vh;background:black;border-radius:8px"></video><div class="row"><button type="button" onclick="fotografar()">📷 Capturar foto</button><button type="button" class="secondary" onclick="fecharCamera()">Cancelar</button></div></div></div><script>
-let listas={},passos=[],id=crypto.randomUUID();const campos=['Unidade','Setor','Data','Tarefa','Função/Cargo','Responsável','Código ART','Revisão'];let header={};const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const opts=(key,value)=>'<option value="">Selecione</option>'+[...new Set([...(listas[key]||[]),...(value?[value]:[])])].map(v=>`<option ${String(v)===String(value)?'selected':''}>${esc(v)}</option>`).join('');function nivel(n){return n<16?['Aceitável','ok']:n<=168?['Menos crítico','moderate']:n<=400?['Crítico','high']:['Muito crítico','critical']}function capture(){document.querySelectorAll('[data-header]').forEach(e=>header[e.dataset.header]=e.value);document.querySelectorAll('[data-step]').forEach(e=>{let [i,k]=e.dataset.step.split(':');if(passos[i])passos[i][k]=e.value})}
+let listas={},passos=[],id=crypto.randomUUID();const campos=['Unidade','Setor','Data','Tarefa','Função/Cargo','Responsável','Código ART','Revisão'];let header={};const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const opts=(key,value)=>'<option value="">Selecione</option>'+[...new Set([...(listas[key]||[]),...(value?[value]:[])])].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR',{sensitivity:'base',numeric:true})).map(v=>`<option ${String(v)===String(value)?'selected':''}>${esc(v)}</option>`).join('');function nivel(n){return n<16?['Aceitável','ok']:n<=168?['Menos crítico','moderate']:n<=400?['Crítico','high']:['Muito crítico','critical']}function capture(){document.querySelectorAll('[data-header]').forEach(e=>header[e.dataset.header]=e.value);document.querySelectorAll('[data-step]').forEach(e=>{let [i,k]=e.dataset.step.split(':');if(passos[i])passos[i][k]=e.value})}
+const ordenarTemas=itens=>[...itens].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR',{sensitivity:'base',numeric:true}));
 const categoriasConfig=[{key:'perigo',title:'Perigos'},{key:'risco',title:'Riscos'},{key:'dano',title:'Danos potenciais'},{key:'epi',title:'EPIs'},{key:'controle',title:'Controles existentes'}];
 const configStorageKey='method_flow_art_listas_v1';
 let listasOriginais={},categoriaAtiva='perigo';
@@ -96,11 +97,12 @@ function carregarListasEditaveis(base){
   if(Array.isArray(saved[cat.key])){
    listas[cat.key]=[...new Set(saved[cat.key].filter(v=>typeof v==='string').map(v=>v.trim()).filter(Boolean))];
   }
+  listas[cat.key]=ordenarTemas(listas[cat.key]||[]);
  }
 }
 function persistirListas(){
  const saved=lerConfiguracoes();
- for(const cat of categoriasConfig)saved[cat.key]=[...(listas[cat.key]||[])];
+ for(const cat of categoriasConfig){listas[cat.key]=ordenarTemas(listas[cat.key]||[]);saved[cat.key]=[...listas[cat.key]];}
  try{localStorage.setItem(configStorageKey,JSON.stringify(saved));return true}
  catch(e){alert('Não foi possível salvar a configuração no navegador.');return false}
 }
@@ -130,7 +132,7 @@ function renderConfiguracao(){
 function renderConfigLista(){
  const arr=listas[categoriaAtiva]||[];
  const query=document.getElementById('configPesquisa').value.trim().toLocaleLowerCase('pt-BR');
- const indices=arr.map((value,index)=>({value,index})).filter(item=>item.value.toLocaleLowerCase('pt-BR').includes(query));
+ const indices=arr.map((value,index)=>({value,index})).filter(item=>item.value.toLocaleLowerCase('pt-BR').includes(query)).sort((a,b)=>a.value.localeCompare(b.value,'pt-BR',{sensitivity:'base',numeric:true}));
  document.getElementById('configItens').innerHTML=indices.map(({value,index})=>'<div class="config-entry"><span>'+esc(value)+'</span><button type="button" class="secondary" onclick="editarItemConfiguracao('+index+')">Editar</button><button type="button" class="danger" onclick="excluirItemConfiguracao('+index+')">Excluir</button></div>').join('')||'<p class="muted">Nenhuma opção encontrada.</p>';
  document.getElementById('configContagem').textContent=arr.length+' opções cadastradas';
 }
@@ -172,7 +174,7 @@ function multiValues(value){
 }
 function multiMarkup(i,k,value){
  const selected=multiValues(value),options=[...new Set(listas[k]||[])];
- const all=[...options,...selected.filter(v=>!options.includes(v))];
+ const all=ordenarTemas([...options,...selected.filter(v=>!options.includes(v))]);
  const key=i+':'+k;
  const labels={perigo:'perigos',risco:'riscos',dano:'danos potenciais',epi:'EPIs'};
  const items=all.map((item,j)=>'<label class="multi-choice"><input type="checkbox" '+(selected.includes(item)?'checked ':'')+'onchange="alterarMulti('+i+',\''+k+'\','+j+',this.checked)"><span>'+esc(item)+'</span></label>').join('');
@@ -184,7 +186,7 @@ function alterarMulti(i,k,index,checked){
  capture();
  const current=multiValues(passos[i][k]);
  const options=[...new Set(listas[k]||[])];
- const all=[...options,...current.filter(v=>!options.includes(v))];
+ const all=ordenarTemas([...options,...current.filter(v=>!options.includes(v))]);
  const item=all[index];if(item===undefined)return;
  const updated=checked?[...current.filter(v=>v!==item),item]:current.filter(v=>v!==item);
  passos[i][k]=updated.join(' | ');
