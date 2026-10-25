@@ -1,7 +1,7 @@
 -- Method Flow — Mapa de Risco / SuperDB p_4c359bf39f
 -- CONFIRA no painel que o schema é proj_p_4c359bf39f antes de executar.
 -- NÃO cole senhas/chaves neste arquivo. Nenhum dado será excluído.
-begin;
+-- SuperDB gerencia a transação automaticamente; não utilizar BEGIN.
 create schema if not exists proj_p_4c359bf39f;
 create table if not exists proj_p_4c359bf39f.art_profiles(
  id uuid primary key,
@@ -73,8 +73,7 @@ grant select on proj_p_4c359bf39f.art_profiles to authenticated;
 grant select,insert,update,delete on proj_p_4c359bf39f.art_audits to authenticated;
 -- art_pending_users intentionally inaccessible to anon/authenticated;
 -- only a trusted backend with service credentials may manage invitations.
-commit;
-
+-- SuperDB gerencia a transação automaticamente; não utilizar COMMIT.
 -- DEPOIS de criar a credencial principal em Autenticação > Usuários,
 -- copie o UUID do usuário autenticado e execute separadamente:
 -- insert into proj_p_4c359bf39f.art_profiles(id,email,role,active)
