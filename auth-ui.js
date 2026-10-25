@@ -1,64 +1,82 @@
-import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { createClient } from 'https://esm.sh/@superdb/client@0.3.0?bundle';
 const cfg=window.MF_AUTH_CONFIG||{};
-if(cfg.enabled === true && cfg.url && cfg.anonKey && cfg.provider === 'supabase'){
- const supabase=createClient(cfg.url,cfg.anonKey),e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const gate=document.createElement('div');gate.id='mf-login-gate';
- gate.style='position:fixed;inset:0;z-index:6000;background:#071c43;display:flex;justify-content:center;align-items:center;padding:16px';
- const panel=document.createElement('section');panel.style='background:white;padding:24px;max-height:95vh;overflow:auto;width:min(580px,96vw);border-radius:12px;color:#162943';
- gate.appendChild(panel);document.body.appendChild(gate);
- const input=(id,label,type='text')=>'<label style="display:block;margin-top:9px">'+label+'</label><input id="'+id+'" type="'+type+'" style="width:100%;padding:10px;margin:5px 0">';
- const message=s=>{const t=document.getElementById('mf-msg');if(t)t.textContent=s};
- async function api(action,args={},authorized=false){
-  const {data:{session}}=await supabase.auth.getSession();
-  const res=await fetch(cfg.url.replace(/\/$/,'')+'/functions/v1/'+(cfg.functionName||'art-access'),{method:'POST',headers:{'Content-Type':'application/json','apikey':cfg.anonKey,...(authorized&&session?{Authorization:'Bearer '+session.access_token}:{})},body:JSON.stringify({action,...args})});
-  const data=await res.json();if(!res.ok||data.error)throw Error(data.error||'Falha na operação');return data;
- }
- function base(title,body){panel.innerHTML='<h2>'+title+'</h2><p id="mf-msg" style="color:#6b7280"></p>'+body}
+if(cfg.provider==='superdb'&&cfg.enabled===true){
+ const root=document.createElement('div');root.id='mfAuthOverlay';root.className='mf-auth-overlay';
+ root.innerHTML='<section class="mf-auth-panel"><h2>Method Flow — Mapa de Risco</h2><p id="mfStatus"></p><div id="mfAuthBody"></div></section>';
+ const style=document.createElement('style');
+ style.textContent='.mf-auth-overlay{position:fixed;inset:0;z-index:6000;background:#071a3af2;display:flex;align-items:center;justify-content:center;padding:16px}.mf-auth-panel{width:min(580px,96vw);max-height:94vh;overflow:auto;background:#fff;color:#122a45;border-radius:12px;padding:24px;box-shadow:0 12px 45px #0006}.mf-auth-panel input{width:100%;padding:11px;margin:5px 0 12px;border:1px solid #cad8e7;border-radius:6px}.mf-auth-panel label{font-weight:600;font-size:13px}.mf-auth-panel button{margin:5px}.mf-auth-user{padding:10px;border-bottom:1px solid #d9e4ee}.mf-auth-users{max-height:320px;overflow:auto;border:1px solid #d6dfeb;border-radius:8px}.mf-auth-hint{color:#61728b;font-size:13px}.mf-auth-error{color:#b22232}';
+ document.head.appendChild(style);document.body.appendChild(root);
+ const $=id=>document.getElementById(id);
+ const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const status=(m,error=false)=>{const el=$('mfStatus');el.textContent=m;el.className=error?'mf-auth-error':'mf-auth-hint'};
+ const input=(id,label,type='text')=>'<label for="'+id+'">'+label+'</label><input id="'+id+'" type="'+type+'" required>';
+ const show=()=>{root.style.display='flex'};
+ const hide=()=>{root.style.display='none'};
+ let client=null,profile=null,navigation=null;
  function login(){
-  base('Method Flow — Entrar',input('mf-email','E-mail','email')+input('mf-pass','Senha','password')+'<button id="mf-entrar">Entrar</button> <button id="mf-first">1º acesso</button>');
-  document.getElementById('mf-first').onclick=first;
-  document.getElementById('mf-entrar').onclick=async()=>{try{
-   const {data,error}=await supabase.auth.signInWithPassword({email:document.getElementById('mf-email').value,password:document.getElementById('mf-pass').value});
+   show();
+   $('mfAuthBody').innerHTML=input('mfEmail','E-mail','email')+input('mfPassword','Senha','password')+
+    '<button id="mfSignIn">Entrar</button><button class="secondary" id="mfFirst">1º acesso</button>';
+   status('Entre com sua conta cadastrada no SuperDB.');
+   $('mfSignIn').onclick=async()=>{
+    const btn=$('mfSignIn');btn.disabled=true;
+    try{
+     const email=$('mfEmail').value.trim().toLowerCase(),password=$('mfPassword').value;
+     if(!email||!password)throw Error('Preencha e-mail e senha.');
+     const {error}=await client.auth.signInWithPassword({email,password});
+     if(error)throw error;
+     await checkSession();
+    }catch(e){status(e.message||'Não foi possível entrar.',true)}
+    finally{btn.disabled=false}
+   };
+   $('mfFirst').onclick=()=>status('1º acesso sem e-mail: o serviço administrativo de ativação ainda precisa ser implantado.',true);
+ }
+ async function checkSession(){
+  const {data,error}=await client.auth.getUser();
+  const user=data?.user;
+  if(error||!user){login();return}
+  try{
+   const {data:p,error:e}=await client.from('art_profiles').select('id,email,role,active').eq('id',user.id).maybeSingle();
+   if(e)throw e;
+   if(!p?.active)throw Error('Conta não ativa ou sem perfil autorizado.');
+   profile=p;hide();createNavigation();
+  }catch(e){await client.auth.signOut();login();status(e.message||'Perfil não autorizado.',true)}
+ }
+ async function signOut(){
+  if(!client)throw Error('SuperDB não conectado.');
+  const {error}=await client.auth.signOut();
+  if(error)throw error;
+  profile=null;navigation?.remove();navigation=null;login();
+ }
+ function createNavigation(){
+  navigation?.remove();
+  const nav=document.createElement('div');
+  nav.className='no-print';nav.style='position:fixed;bottom:12px;right:12px;z-index:1800;background:#fff;border:1px solid #cad9ed;border-radius:9px;padding:8px;box-shadow:0 4px 15px #0002';
+  if(profile.role==='principal'||profile.role==='administrador'){
+   const users=document.createElement('button');users.textContent='👥 Usuários';users.onclick=showUsers;nav.appendChild(users);
+  }
+  const logout=document.createElement('button');logout.textContent='⏻ Sair';logout.className='secondary';
+  logout.onclick=()=>signOut().catch(e=>alert(e.message));nav.appendChild(logout);
+  navigation=nav;document.body.appendChild(nav);
+ }
+ async function showUsers(){
+  if(!profile||!['principal','administrador'].includes(profile.role))return;
+  show();
+  status('Consulta de usuários. Para cadastrar ou ativar sem e-mail, ainda será necessário conectar um serviço administrativo seguro.');
+  $('mfAuthBody').innerHTML='<h3>Usuários</h3><div class="mf-auth-users" id="mfUsersList">Consultando...</div><button id="mfCloseUsers">Voltar ao mapa</button>';
+  $('mfCloseUsers').onclick=hide;
+  try{
+   const {data,error}=await client.from('art_profiles').select('email,role,active').order('email');
    if(error)throw error;
-   const {data:profile}=await supabase.from('art_profiles').select('id,role,active,email').eq('id',data.user.id).maybeSingle();
-   if(!profile?.active){await supabase.auth.signOut();throw Error('Cadastro não ativo')}
-   access(profile);
-  }catch(err){message(err.message)}};
+   $('mfUsersList').innerHTML=(data||[]).map(p=>'<div class="mf-auth-user"><strong>'+escapeHTML(p.email)+'</strong><div class="mf-auth-hint">'+escapeHTML(p.role)+' — '+(p.active?'Ativo':'Inativo')+'</div></div>').join('')||'Nenhum usuário encontrado.';
+  }catch(e){status('Erro ao listar usuários: '+e.message,true)}
  }
- function first(){
-  base('1º acesso — Criar senha',input('mf-email','E-mail','email')+input('mf-code','Código fornecido pelo administrador')+input('mf-pass','Senha (mínimo 12 caracteres)','password')+input('mf-confirm','Confirme a senha','password')+'<button id="mf-create">Criar senha</button> <button id="mf-back">Voltar</button>');
-  document.getElementById('mf-back').onclick=login;
-  document.getElementById('mf-create').onclick=async()=>{try{
-   const pwd=document.getElementById('mf-pass').value;if(pwd!==document.getElementById('mf-confirm').value)throw Error('Senhas diferentes');
-   await api('first_access',{email:document.getElementById('mf-email').value,code:document.getElementById('mf-code').value,password:pwd});
-   login();message('Senha cadastrada. Entre com seu e-mail e senha.');
-  }catch(err){message(err.message)}};
+ window.MethodFlowAuth={get client(){return client},get profile(){return profile},signOut,showUsers};
+ if(!cfg.anonKey||!cfg.projectId||!cfg.url){
+  status('Falta configurar a chave pública anon em auth-config.js.',true);
+  $('mfAuthBody').textContent='Login não ativado: configure a conexão antes de liberar o sistema.';
+ }else{
+  try{client=createClient(cfg.url,cfg.anonKey,{project:cfg.projectId});checkSession().catch(e=>{login();status(e.message,true)})}
+  catch(e){status('Erro no SDK: '+e.message,true)}
  }
- function access(profile){
-  gate.style.display='none';
-  const nav=document.createElement('aside');nav.id='mf-access-nav';nav.style='position:fixed;bottom:12px;right:12px;z-index:1800;background:white;padding:6px;border-radius:10px;border:1px solid #cbd5e1';
-  if(profile.role!=='usuario'){const button=document.createElement('button');button.textContent='👥 Usuários';button.onclick=users;nav.appendChild(button)}
-  const logout=document.createElement('button');logout.textContent='Sair';logout.onclick=async()=>{await supabase.auth.signOut();nav.remove();gate.style.display='flex';login()};nav.appendChild(logout);document.body.appendChild(nav);
- }
- async function users(){
-  gate.style.display='flex';
-  base('Administração — Usuários',input('mf-new-email','E-mail do novo usuário','email')+'<label>Perfil</label><select id="mf-role"><option value="usuario">Usuário</option><option value="administrador">Administrador</option></select><p><label><input id="mf-active" type="checkbox" checked> Ativo</label></p><button id="mf-register">Cadastrar</button> <button id="mf-close">Fechar</button><div id="mf-users"></div>');
-  document.getElementById('mf-close').onclick=()=>gate.style.display='none';
-  document.getElementById('mf-register').onclick=async()=>{try{await api('register',{email:document.getElementById('mf-new-email').value,role:document.getElementById('mf-role').value,active:document.getElementById('mf-active').checked},true);message('Usuário cadastrado. Gere o código de primeiro acesso.');await list()}catch(err){message(err.message)}};
-  await list();
- }
- async function list(){
-  try{const users=await api('list_users',{},true),el=document.getElementById('mf-users');
-   el.innerHTML='<h3>Cadastros</h3>'+[...users.profiles.map(x=>({...x,kind:'profile'})),...users.pending.map(x=>({...x,kind:'pending'}))].map(x=>'<div style="padding:10px;border-bottom:1px solid #ddd"><b>'+e(x.email)+'</b> — '+e(x.role)+' — '+(x.active?'Ativo':'Inativo')+'<p>'+(x.role==='principal'?'':'<button data-id="'+e(x.id)+'" data-kind="'+x.kind+'" data-active="'+!x.active+'" class="mf-toggle">'+(x.active?'Desativar':'Ativar')+'</button>')+(x.kind==='pending'&&x.active&&!x.claimed_at?' <button class="mf-code" data-id="'+e(x.id)+'">Gerar código 1º acesso</button>':'')+'</p></div>').join('');
-   el.querySelectorAll('.mf-toggle').forEach(btn=>btn.onclick=async()=>{try{await api('set_active',{id:btn.dataset.id,kind:btn.dataset.kind,active:btn.dataset.active==='true'},true);await list()}catch(err){message(err.message)}});
-   el.querySelectorAll('.mf-code').forEach(btn=>btn.onclick=async()=>{try{const d=await api('issue_code',{id:btn.dataset.id},true);const p=document.createElement('p');p.textContent='Código único (48h): '+d.code+' — entregue ao usuário por um canal seguro. Não é enviado por e-mail.';el.prepend(p)}catch(err){message(err.message)}});
-  }catch(err){message(err.message)}
- }
- async function start(){
-  const {data:{session}}=await supabase.auth.getSession();
-  if(session){const {data:p}=await supabase.from('art_profiles').select('id,role,active,email').eq('id',session.user.id).maybeSingle();if(p?.active){access(p);return}}
-  login();
- }
- start().catch(x=>{login();message(x.message)});
- window.MethodFlowAuth={supabase};
 }
