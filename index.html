@@ -22,7 +22,40 @@
 .explorer-details{overflow:auto}.explorer-details td,.explorer-details th{font-size:12px;padding:8px}.explorer-details tr.selected{background:#d9eaff}
 body.explorer-open{overflow:hidden}
 @media(max-width:650px){.explorer-overlay{padding:3px}.explorer-window{height:98vh;width:100vw}.explorer-sidebar{width:115px;padding:5px}.explorer-tools button{font-size:11px;padding:7px 5px}.explorer-tiles{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}.explorer-filters label{font-size:11px}}
-.explorer-check{display:flex;gap:6px;align-items:center;font-size:12px;background:#e0eeff;color:#0b3f75;padding:7px;border-radius:5px;cursor:pointer}.explorer-check input{width:18px;height:18px;margin:0;accent-color:#0065bd}.explorer-item.selected{background:#cce5ff!important;border:2px solid #0862c5!important}.move-layer{position:absolute;inset:0;background:#071a30aa;z-index:20;align-items:center;justify-content:center}.explorer-window{position:relative}.move-dialog{background:#fff;border-radius:10px;padding:24px;width:min(450px,94%);box-shadow:0 12px 35px #0004}.move-dialog select{width:100%;margin-bottom:15px}.drop-target{background:#c7e8ff!important;border:2px dashed #0068cf!important}.explorer-item[draggable="true"]{cursor:grab}.multi-field details{position:relative;border:1px solid #cad5e4;border-radius:7px;background:white}.multi-field summary{cursor:pointer;padding:9px;min-height:42px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:12px}.multi-field summary::marker{color:#0862c5}.multi-chip{padding:4px 7px;background:#e7f0ff;border-radius:5px;color:#114c86;overflow-wrap:anywhere}.multi-list{max-height:230px;overflow-y:auto;padding:8px;border-top:1px solid #dce5f0}.multi-choice{display:flex!important;align-items:flex-start;gap:8px;font-weight:400!important;font-size:12px!important;padding:7px 3px;cursor:pointer}.multi-choice input{width:17px;height:17px;flex:none;margin:0;accent-color:#0862c5}.multi-choice span{flex:1;overflow-wrap:anywhere}.multi-list button{font-size:12px;padding:8px}.multi-field small{display:block;margin-top:4px}@media print{.multi-field summary{border:0;padding:1px}.multi-field .multi-list{display:none}}</style></head><body><header><img src="method-flow.png" alt="Method Flow"><div><h1>ART · Análise de Risco da Tarefa</h1><small>Method Flow | FO-EHS-37 · Matriz Safhear</small></div></header><main><div class="row no-print"><h2>Mapa de Risco</h2><div><button onclick="novo()" class="secondary">Nova ART</button><button onclick="salvar()">Salvar</button><button onclick="abrirExplorador()" class="secondary">📁 Explorador de ARTs</button><button onclick="exportar()" class="secondary">Exportar JSON</button><button onclick="exportarBase()" class="secondary">Backup da base JSON</button><button onclick="document.getElementById('importar').click()" class="secondary">Importar JSON</button><input id="importar" type="file" accept="application/json" hidden onchange="importarArquivo(event)"><button onclick="window.print()">Imprimir / PDF</button></div></div><div id="explorador" class="explorer-overlay no-print" role="dialog" aria-modal="true" aria-label="Explorador de arquivos" style="display:none">
+.explorer-check{display:flex;gap:6px;align-items:center;font-size:12px;background:#e0eeff;color:#0b3f75;padding:7px;border-radius:5px;cursor:pointer}.explorer-check input{width:18px;height:18px;margin:0;accent-color:#0065bd}.explorer-item.selected{background:#cce5ff!important;border:2px solid #0862c5!important}.move-layer{position:absolute;inset:0;background:#071a30aa;z-index:20;align-items:center;justify-content:center}.explorer-window{position:relative}.move-dialog{background:#fff;border-radius:10px;padding:24px;width:min(450px,94%);box-shadow:0 12px 35px #0004}.move-dialog select{width:100%;margin-bottom:15px}.drop-target{background:#c7e8ff!important;border:2px dashed #0068cf!important}.explorer-item[draggable="true"]{cursor:grab}.multi-field details{position:relative;border:1px solid #cad5e4;border-radius:7px;background:white}.multi-field summary{cursor:pointer;padding:9px;min-height:42px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:12px}.multi-field summary::marker{color:#0862c5}.multi-chip{padding:4px 7px;background:#e7f0ff;border-radius:5px;color:#114c86;overflow-wrap:anywhere}.multi-list{max-height:230px;overflow-y:auto;padding:8px;border-top:1px solid #dce5f0}.multi-choice{display:flex!important;align-items:flex-start;gap:8px;font-weight:400!important;font-size:12px!important;padding:7px 3px;cursor:pointer}.multi-choice input{width:17px;height:17px;flex:none;margin:0;accent-color:#0862c5}.multi-choice span{flex:1;overflow-wrap:anywhere}.multi-list button{font-size:12px;padding:8px}.multi-field small{display:block;margin-top:4px}@media print{.multi-field summary{border:0;padding:1px}.multi-field .multi-list{display:none}}
+header .config-header{margin-left:auto;white-space:nowrap;border:1px solid #9ebdeb;background:#164b88;color:#fff}
+.config-overlay{position:fixed;inset:0;z-index:2300;background:#08182dc9;display:flex;align-items:center;justify-content:center;padding:12px}
+.config-window{width:min(1000px,98vw);height:min(760px,94vh);display:flex;flex-direction:column;overflow:hidden;background:white;border-radius:11px;padding:18px;box-shadow:0 20px 65px #0005}
+.config-top{display:flex;justify-content:space-between;align-items:center;gap:15px;border-bottom:1px solid #d9e3ed}
+.config-top h2{margin:4px 0 14px;font-size:21px}.config-window>p{font-size:12px}
+.config-layout{display:grid;grid-template-columns:210px minmax(0,1fr);flex:1;min-height:0;gap:12px}
+#configCategorias{overflow-y:auto;background:#f1f5fa;padding:9px;border-radius:8px;display:flex;flex-direction:column;align-items:stretch;gap:5px}
+#configCategorias button{margin:0;text-align:left;background:transparent;color:#1c3657;padding:12px 10px}
+#configCategorias button.active{background:#dbeafe;color:#07509c}
+.config-main{min-width:0;display:flex;flex-direction:column;gap:10px}
+.config-main h3{margin:4px 0}.config-add{display:flex;gap:8px}.config-add input{flex:1}.config-items{flex:1;min-height:0;overflow:auto;border:1px solid #d8e3ee;border-radius:7px;padding:5px}
+.config-entry{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid #e3ebf3}
+.config-entry span{flex:1;overflow-wrap:anywhere}
+.config-entry button{font-size:12px;padding:7px 9px;flex:none}
+.config-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px}
+@media(max-width:640px){.config-layout{grid-template-columns:125px minmax(0,1fr)}.config-entry{flex-wrap:wrap}.config-window{padding:10px}.config-top h2{font-size:16px}header .config-header{font-size:11px;padding:8px}}
+</style></head><body><header><img src="method-flow.png" alt="Method Flow"><div><h1>ART · Análise de Risco da Tarefa</h1><small>Method Flow | FO-EHS-37 · Matriz Safhear</small></div><button class="config-header no-print" type="button" onclick="abrirConfiguracao()">⚙ Configuração</button></header><div id="configuracaoART" class="config-overlay no-print" role="dialog" aria-modal="true" aria-label="Configuração das listas" style="display:none">
+ <section class="config-window">
+  <div class="config-top"><h2>⚙ Configuração — Listas da ART</h2><button type="button" onclick="fecharConfiguracao()" class="secondary">Fechar ✕</button></div>
+  <p class="muted">Inclua, renomeie ou exclua opções de preenchimento das ARTs. As modificações nas listas não apagam informações já registradas nas auditorias.</p>
+  <div class="config-layout">
+   <nav id="configCategorias" aria-label="Categorias de informações"></nav>
+   <div class="config-main">
+    <h3 id="configTitulo">Perigos</h3>
+    <div class="config-add"><input id="configNovoItem" placeholder="Digite uma nova opção" aria-label="Nova opção da categoria"><button type="button" onclick="incluirItemConfiguracao()">+ Incluir</button></div>
+    <input id="configPesquisa" placeholder="Pesquisar nesta lista" oninput="renderConfigLista()" aria-label="Pesquisar opções">
+    <div id="configItens" class="config-items"></div>
+    <div class="config-bottom"><span id="configContagem" class="muted"></span><button type="button" class="secondary" onclick="restaurarCategoria()">Restaurar lista original</button></div>
+   </div>
+  </div>
+  <p class="muted">As configurações ficam salvas neste navegador. Para utilizar as mesmas listas em vários aparelhos será necessário armazenamento compartilhado.</p>
+ </section>
+</div><main><div class="row no-print"><h2>Mapa de Risco</h2><div><button onclick="novo()" class="secondary">Nova ART</button><button onclick="salvar()">Salvar</button><button onclick="abrirExplorador()" class="secondary">📁 Explorador de ARTs</button><button onclick="exportar()" class="secondary">Exportar JSON</button><button onclick="exportarBase()" class="secondary">Backup da base JSON</button><button onclick="document.getElementById('importar').click()" class="secondary">Importar JSON</button><input id="importar" type="file" accept="application/json" hidden onchange="importarArquivo(event)"><button onclick="window.print()">Imprimir / PDF</button></div></div><div id="explorador" class="explorer-overlay no-print" role="dialog" aria-modal="true" aria-label="Explorador de arquivos" style="display:none">
 <div class="explorer-window">
  <div class="explorer-head"><strong>📁 Explorador de arquivos — ARTs</strong><button class="explorer-close" onclick="fecharExplorador()">Fechar ✕</button></div>
  <div class="explorer-tools">
@@ -32,7 +65,91 @@ body.explorer-open{overflow:hidden}
  <div id="modalMoverART" class="move-layer" style="display:none"><div class="move-dialog"><h3>Mover ART — De → Para</h3><p id="moverNome"></p><label>De</label><p id="moverOrigem"></p><label>Para</label><select id="moverDestino"></select><div class="row"><button class="secondary" onclick="fecharMoverDePara()">Cancelar</button><button onclick="confirmarMoverDePara()">Confirmar</button></div></div></div><div class="explorer-workspace"><aside class="explorer-sidebar"><div id="arvorePastas"></div></aside><div class="explorer-content"><div class="explorer-tiles" id="tilesExplorer"></div><div class="explorer-details" id="detailsExplorer" style="display:none"><table><thead><tr><th>Arquivo</th><th>Data</th><th>Setor</th><th>Pasta</th><th>Ações</th></tr></thead><tbody id="arquivosArt"></tbody></table></div></div></div>
  <div class="explorer-footer"><span id="pastaTitulo">Todas as pastas</span> · <span id="totalFiltrado"></span><span id="selecaoExplorer">Nenhuma seleção</span><span class="muted">Armazenamento local deste navegador — exporte backups regularmente</span></div>
 </div></div><section class="panel"><h2>Identificação da tarefa</h2><div class="grid" id="cabecalho"></div></section><section class="panel"><div class="row"><h2>Etapas, perigos e controles</h2><button onclick="adicionar()">+ Adicionar passo</button></div><div id="passos"></div></section><section class="panel"><h2>Classificação dos riscos</h2><p class="muted">NR = Probabilidade × Severidade. Faixas reproduzidas do modelo fornecido; valide a metodologia antes de uso operacional.</p><div id="resumo"></div></section><section class="panel no-print" id="saved"><h2>ARTs salvas neste navegador</h2><div id="historico"></div><p class="muted">Os registros ficam apenas neste navegador/dispositivo. Para backup ou transferência, use Exportar JSON. Não há sincronização entre usuários.</p></section></main><div id="cameraModal" role="dialog" aria-label="Tirar fotografia" style="display:none;position:fixed;inset:0;background:#000d;z-index:1000;align-items:center;justify-content:center;padding:16px"><div style="background:white;padding:16px;border-radius:12px;width:min(96vw,650px)"><h2>Fotografar etapa</h2><video id="cameraVideo" autoplay playsinline muted style="width:100%;max-height:65vh;background:black;border-radius:8px"></video><div class="row"><button type="button" onclick="fotografar()">📷 Capturar foto</button><button type="button" class="secondary" onclick="fecharCamera()">Cancelar</button></div></div></div><script>
-let listas={},passos=[],id=crypto.randomUUID();const campos=['Unidade','Setor','Data','Tarefa','Função/Cargo','Responsável','Código ART','Revisão'];let header={};const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const opts=(key,value)=>'<option value="">Selecione</option>'+[...new Set([...(listas[key]||[]),...(value?[value]:[])])].map(v=>`<option ${String(v)===String(value)?'selected':''}>${esc(v)}</option>`).join('');function nivel(n){return n<16?['Aceitável','ok']:n<=168?['Menos crítico','moderate']:n<=400?['Crítico','high']:['Muito crítico','critical']}function capture(){document.querySelectorAll('[data-header]').forEach(e=>header[e.dataset.header]=e.value);document.querySelectorAll('[data-step]').forEach(e=>{let [i,k]=e.dataset.step.split(':');if(passos[i])passos[i][k]=e.value})}const multiOpen=new Set();
+let listas={},passos=[],id=crypto.randomUUID();const campos=['Unidade','Setor','Data','Tarefa','Função/Cargo','Responsável','Código ART','Revisão'];let header={};const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const opts=(key,value)=>'<option value="">Selecione</option>'+[...new Set([...(listas[key]||[]),...(value?[value]:[])])].map(v=>`<option ${String(v)===String(value)?'selected':''}>${esc(v)}</option>`).join('');function nivel(n){return n<16?['Aceitável','ok']:n<=168?['Menos crítico','moderate']:n<=400?['Crítico','high']:['Muito crítico','critical']}function capture(){document.querySelectorAll('[data-header]').forEach(e=>header[e.dataset.header]=e.value);document.querySelectorAll('[data-step]').forEach(e=>{let [i,k]=e.dataset.step.split(':');if(passos[i])passos[i][k]=e.value})}
+const categoriasConfig=[{key:'perigo',title:'Perigos'},{key:'risco',title:'Riscos'},{key:'dano',title:'Danos potenciais'},{key:'epi',title:'EPIs'},{key:'controle',title:'Controles existentes'}];
+const configStorageKey='method_flow_art_listas_v1';
+let listasOriginais={},categoriaAtiva='perigo';
+function lerConfiguracoes(){
+ try{const obj=JSON.parse(localStorage.getItem(configStorageKey)||'{}');return obj&&typeof obj==='object'&&!Array.isArray(obj)?obj:{}}catch(e){return {}}
+}
+function carregarListasEditaveis(base){
+ listasOriginais={...base};
+ const saved=lerConfiguracoes();
+ listas={...base};
+ for(const cat of categoriasConfig){
+  if(Array.isArray(saved[cat.key])){
+   listas[cat.key]=[...new Set(saved[cat.key].filter(v=>typeof v==='string').map(v=>v.trim()).filter(Boolean))];
+  }
+ }
+}
+function persistirListas(){
+ const saved=lerConfiguracoes();
+ for(const cat of categoriasConfig)saved[cat.key]=[...(listas[cat.key]||[])];
+ try{localStorage.setItem(configStorageKey,JSON.stringify(saved));return true}
+ catch(e){alert('Não foi possível salvar a configuração no navegador.');return false}
+}
+function abrirConfiguracao(){
+ capture();
+ document.getElementById('configuracaoART').style.display='flex';
+ document.body.style.overflow='hidden';
+ renderConfiguracao();
+}
+function fecharConfiguracao(){
+ document.getElementById('configuracaoART').style.display='none';
+ document.body.style.overflow=document.getElementById('explorador').style.display==='flex'?'hidden':'';
+ desenhar();
+}
+function selecionarCategoriaConfig(key){
+ if(!categoriasConfig.some(c=>c.key===key))return;
+ categoriaAtiva=key;
+ document.getElementById('configPesquisa').value='';
+ document.getElementById('configNovoItem').value='';
+ renderConfiguracao();
+}
+function renderConfiguracao(){
+ document.getElementById('configCategorias').innerHTML=categoriasConfig.map(c=>'<button type="button" class="'+(categoriaAtiva===c.key?'active':'')+'" onclick="selecionarCategoriaConfig(\''+c.key+'\')">'+esc(c.title)+' ('+(listas[c.key]||[]).length+')</button>').join('');
+ document.getElementById('configTitulo').textContent=categoriasConfig.find(c=>c.key===categoriaAtiva).title;
+ renderConfigLista();
+}
+function renderConfigLista(){
+ const arr=listas[categoriaAtiva]||[];
+ const query=document.getElementById('configPesquisa').value.trim().toLocaleLowerCase('pt-BR');
+ const indices=arr.map((value,index)=>({value,index})).filter(item=>item.value.toLocaleLowerCase('pt-BR').includes(query));
+ document.getElementById('configItens').innerHTML=indices.map(({value,index})=>'<div class="config-entry"><span>'+esc(value)+'</span><button type="button" class="secondary" onclick="editarItemConfiguracao('+index+')">Editar</button><button type="button" class="danger" onclick="excluirItemConfiguracao('+index+')">Excluir</button></div>').join('')||'<p class="muted">Nenhuma opção encontrada.</p>';
+ document.getElementById('configContagem').textContent=arr.length+' opções cadastradas';
+}
+function incluirItemConfiguracao(){
+ const input=document.getElementById('configNovoItem');
+ const value=input.value.trim();
+ if(!value)return alert('Digite uma opção.');
+ const items=listas[categoriaAtiva]||[];
+ if(items.some(item=>item.toLocaleLowerCase('pt-BR')===value.toLocaleLowerCase('pt-BR')))return alert('Essa opção já está cadastrada.');
+ items.push(value);listas[categoriaAtiva]=items;
+ if(!persistirListas()){items.pop();return}
+ input.value='';renderConfiguracao();
+}
+function editarItemConfiguracao(index){
+ const items=listas[categoriaAtiva]||[],old=items[index];if(old===undefined)return;
+ const value=prompt('Editar opção:',old);if(value===null||!value.trim())return;
+ const novo=value.trim();
+ if(items.some((v,i)=>i!==index&&v.toLocaleLowerCase('pt-BR')===novo.toLocaleLowerCase('pt-BR')))return alert('Já existe essa opção na lista.');
+ items[index]=novo;if(!persistirListas())items[index]=old;
+ renderConfiguracao();
+}
+function excluirItemConfiguracao(index){
+ const items=listas[categoriaAtiva]||[],old=items[index];if(old===undefined)return;
+ if(!confirm('Excluir "'+old+'" das opções disponíveis? As ARTs existentes não serão alteradas.'))return;
+ items.splice(index,1);if(!persistirListas())items.splice(index,0,old);
+ renderConfiguracao();
+}
+function restaurarCategoria(){
+ const cat=categoriasConfig.find(c=>c.key===categoriaAtiva);
+ if(!confirm('Restaurar lista original de '+cat.title+'? As opções personalizadas desta categoria serão substituídas.'))return;
+ const old=listas[categoriaAtiva];listas[categoriaAtiva]=[...(listasOriginais[categoriaAtiva]||[])];
+ if(!persistirListas())listas[categoriaAtiva]=old;
+ renderConfiguracao();
+}
+const multiOpen=new Set();
 function multiValues(value){
  if(Array.isArray(value))return value.map(String).filter(Boolean);
  return String(value||'').split(' | ').map(v=>v.trim()).filter(Boolean);
@@ -357,5 +474,5 @@ function fotografar(){
  passos[cameraPasso].foto=data;
  fecharCamera();desenhar();
 }
-fetch('listas.json').then(r=>r.json()).then(d=>{listas=d;novoInicial()}).catch(()=>{alert('Abra por servidor web/GitHub Pages para carregar as listas.');novoInicial()});function novoInicial(){header={'Data':new Date().toLocaleDateString('en-CA'),'Revisão':'00'};passos=[{status:'Pendente'}];desenhar();historico()}
+fetch('listas.json').then(r=>{if(!r.ok)throw Error('Não foi possível carregar listas.json');return r.json()}).then(d=>{carregarListasEditaveis(d);novoInicial()}).catch(()=>{carregarListasEditaveis({});alert('Não foi possível carregar as listas iniciais. Verifique o GitHub Pages.');novoInicial()});function novoInicial(){header={'Data':new Date().toLocaleDateString('en-CA'),'Revisão':'00'};passos=[{status:'Pendente'}];desenhar();historico()}
 </script></body></html>
