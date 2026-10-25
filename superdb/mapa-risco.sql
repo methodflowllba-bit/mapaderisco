@@ -2,7 +2,7 @@
 -- CONFIRA no painel que o schema é proj_p_4c359bf39f antes de executar.
 -- NÃO cole senhas/chaves neste arquivo. Nenhum dado será excluído.
 -- SuperDB gerencia a transação automaticamente; não utilizar BEGIN.
-create schema if not exists proj_p_4c359bf39f;
+-- Schema já existe e pertence ao projeto. Não executar CREATE SCHEMA (sem permissão no database).
 create table if not exists proj_p_4c359bf39f.art_profiles(
  id uuid primary key,
  email text not null unique,
