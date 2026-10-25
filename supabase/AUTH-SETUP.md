@@ -1,3 +1,19 @@
+# Integração escolhida: SuperDB
+
+**Projeto informado:** `p_4c359bf39f` em `https://app.superdb.com.br/projects/p_4c359bf39f`.
+
+**Estado:** NÃO conectado, login NÃO ativado e nenhuma ART migrada. Preservar o site atual.
+
+O SuperDB usa `@superdb/client`, `https://auth.superdb.com.br` e exige o **slug** do projeto, que não deve ser presumido a partir do ID `p_4c359bf39f`. O dashboard fornece a chave `anon`. Nunca colocar `service_role` no GitHub Pages.
+
+Importante: **SuperDB não hospeda Supabase Edge Functions**. O código que está em `supabase/functions/art-access/index.ts` é apenas referência anterior e **não pode ser implantado diretamente no SuperDB**. É preciso hospedar as operações privilegiadas (criar usuário, ativar conta e gerar código de primeiro acesso) em um backend separado, como Vercel Functions, com as credenciais sensíveis em variáveis de ambiente.
+
+O SQL de `supabase/schema.sql` foi feito para Supabase. **Não execute sem adaptar e validar** os namespaces de autenticação, schemas e permissões da instância SuperDB.
+
+Para continuar: localizar em **SuperDB > projeto > Conectar/API** o slug e a chave pública `anon`; configurar a autenticação de senha e o serviço de funções do backend; aplicar esquema e RLS verificados; criar administrador principal; testar primeiro acesso; migrar as ARTs existentes por backup controlado.
+
+---
+
 # Autenticação Method Flow — implantação
 
 ## Status
