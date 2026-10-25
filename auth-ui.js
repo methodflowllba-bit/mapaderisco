@@ -1,6 +1,6 @@
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 const cfg=window.MF_AUTH_CONFIG||{};
-if(cfg.url&&cfg.anonKey){
+if(cfg.enabled === true && cfg.url && cfg.anonKey && cfg.provider === 'supabase'){
  const supabase=createClient(cfg.url,cfg.anonKey),e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const gate=document.createElement('div');gate.id='mf-login-gate';
  gate.style='position:fixed;inset:0;z-index:6000;background:#071c43;display:flex;justify-content:center;align-items:center;padding:16px';
