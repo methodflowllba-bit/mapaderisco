@@ -1,0 +1,54 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entrar | Method Flow – Mapa de Risco</title>
+<style>*{box-sizing:border-box}body{margin:0;font:15px Arial,sans-serif;background:#edf3fa;color:#172b46}.head{background:#071c43;color:#fff;padding:22px 5%}.head h1{margin:0;font-size:24px}.head p{margin:7px 0 0}.card{width:min(480px,94vw);margin:45px auto;background:#fff;border-radius:12px;padding:26px;box-shadow:0 5px 25px #1b33521c}h2{margin:0 0 18px}label{display:block;font-weight:bold;font-size:13px;margin-top:12px}input{width:100%;border:1px solid #bdcfe5;border-radius:6px;padding:12px;margin-top:6px;font:inherit}button{background:#0864c3;color:white;border:0;border-radius:6px;padding:12px 18px;cursor:pointer;font-weight:bold;margin-top:16px}button:disabled{opacity:.5}.secondary{background:#e7edf7;color:#173351}.buttons{display:flex;gap:10px;flex-wrap:wrap}.message{font-size:13px;padding:10px;margin-top:15px;border-radius:6px;background:#eaf1fc}.error{background:#fee9eb;color:#a62235}.connection{margin-top:20px;border-top:1px solid #d5deeb;padding-top:12px}.connection summary{cursor:pointer;color:#31547d;font-size:13px}small{color:#667895}a{color:#065eae}</style>
+</head><body><header class="head"><h1>Method Flow — Mapa de Risco</h1><p>Acesso ao sistema de auditorias ART</p></header>
+<main class="card"><h2>Entrar</h2>
+<label for="email">E-mail</label><input id="email" type="email" autocomplete="username" placeholder="Seu e-mail" required>
+<label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" placeholder="Sua senha" required>
+<div class="buttons"><button type="button" id="enter">Entrar</button><button type="button" class="secondary" id="first">1º acesso</button></div>
+<div class="message" id="status" role="status">Informe e-mail e senha.</div>
+<details id="connection" class="connection"><summary>Configuração de conexão (somente na primeira utilização)</summary>
+<label for="anon">Chave pública ANON do SuperDB</label>
+<input id="anon" type="password" autocomplete="off" placeholder="Cole a chave pública anon">
+<button type="button" id="saveKey" class="secondary">Salvar conexão neste navegador</button>
+<p><small>Somente a chave pública é guardada neste navegador. Nunca coloque a chave service_role aqui.</small></p>
+</details>
+<p><a href="./">Voltar ao Mapa de Risco</a></p></main>
+<script src="./auth-config.js"></script>
+<script type="module">
+const cfg=window.MF_AUTH_CONFIG||{};
+const $=id=>document.getElementById(id);
+const status=(v,error=false)=>{$('status').textContent=v;$('status').className='message'+(error?' error':'')};
+const getKey=()=>cfg.anonKey||localStorage.getItem('mf_superdb_anon')||sessionStorage.getItem('mf_superdb_anon')||'';
+const valid=key=>key.split('.').length===3;
+if(!valid(getKey())){$('connection').open=true;status('Configure a chave pública ANON uma vez e depois entre com e-mail e senha.')}
+$('saveKey').onclick=()=>{
+ const key=$('anon').value.trim();
+ if(!valid(key)){status('A chave ANON deve conter três partes separadas por pontos.',true);return}
+ localStorage.setItem('mf_superdb_anon',key);$('anon').value='';$('connection').open=false;status('Conexão configurada. Informe seu e-mail e senha.');
+};
+$('first').onclick=()=>status('O 1º acesso sem e-mail depende da ativação administrativa. Solicite a liberação ao administrador.',true);
+$('enter').onclick=async()=>{
+ const email=$('email').value.trim().toLowerCase(),password=$('password').value,key=getKey();
+ if(!email||!password){status('Informe seu e-mail e senha.',true);return}
+ if(!valid(key)){$('connection').open=true;status('Configure a chave ANON pública uma vez para conectar ao SuperDB.',true);return}
+ $('enter').disabled=true;status('Autenticando com SuperDB...');
+ try{
+  let lib=null,last=null;
+  for(const url of ['https://esm.sh/@superdb/client?bundle','https://cdn.jsdelivr.net/npm/@superdb/client/+esm']){
+   try{lib=await import(url);if(typeof lib.createClient==='function')break;throw Error('SDK não exporta createClient')}catch(err){last=err}
+  }
+  if(!lib||typeof lib.createClient!=='function')throw Error('Não foi possível carregar o SDK: '+(last?.message||'indisponível'));
+  const db=lib.createClient(cfg.url,key,{project:cfg.projectId});
+  const {error}=await db.auth.signInWithPassword({email,password});
+  if(error)throw error;
+  const {data:{user},error:userErr}=await db.auth.getUser();
+  if(userErr||!user)throw userErr||Error('Sessão não identificada');
+  const {data:profile,error:profileErr}=await db.from('art_profiles').select('id,role,active').eq('id',user.id).maybeSingle();
+  if(profileErr||!profile?.active){await db.auth.signOut();throw profileErr||Error('Conta inativa ou sem autorização')}
+  status('Login autorizado. Abrindo Mapa de Risco...');
+  location.replace('./');
+ }catch(err){status('Não foi possível entrar: '+(err.message||String(err)),true)}
+ finally{$('enter').disabled=false}
+};
+</script></body></html>
