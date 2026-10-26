@@ -5,8 +5,18 @@
 <main class="card"><h2>Entrar</h2>
 <label for="email">E-mail</label><input id="email" type="email" autocomplete="username" placeholder="Seu e-mail" required>
 <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" placeholder="Sua senha" required>
-<div class="buttons"><button type="button" id="enter">Entrar</button><button type="button" class="secondary" id="first">1º acesso</button><button type="button" class="secondary" id="checkSession">Verificar sessão existente</button></div>
+<div class="buttons"><button type="button" id="enter">Entrar</button><button type="button" class="secondary" id="first">1º acesso</button><button type="button" class="secondary" id="forgot">Esqueci minha senha</button><button type="button" class="secondary" id="checkSession">Verificar sessão existente</button></div>
 <div class="message" id="status" role="status">Informe e-mail e senha.</div>
+<section id="activationForm" hidden style="border-top:1px solid #d5deeb;margin-top:16px;padding-top:12px">
+<h3 id="activationTitle">Primeiro acesso</h3>
+<p><small>O administrador deve ativar seu cadastro e fornecer um código de autorização temporário. Não é enviado e-mail.</small></p>
+<label for="activationEmail">E-mail cadastrado</label><input type="email" id="activationEmail" autocomplete="username">
+<label for="activationCode">Código de autorização entregue pelo administrador</label><input type="text" id="activationCode" autocomplete="one-time-code">
+<label for="activationPass">Nova senha</label><input type="password" id="activationPass" autocomplete="new-password">
+<label for="activationPass2">Confirmar nova senha</label><input type="password" id="activationPass2" autocomplete="new-password">
+<button type="button" id="activationSubmit">Criar / redefinir senha</button>
+<button type="button" class="secondary" id="activationCancel">Cancelar</button>
+</section>
 <details id="connection" class="connection"><summary>Configuração de conexão (somente na primeira utilização)</summary>
 <label for="anon">Chave pública ANON do SuperDB</label>
 <input id="anon" type="password" autocomplete="off" placeholder="Cole a chave pública anon">
@@ -50,7 +60,37 @@ $('saveKey').onclick=()=>{
  if(!valid(key)){status('A chave ANON deve conter três partes separadas por pontos.',true);return}
  localStorage.setItem('mf_superdb_anon',key);$('anon').value='';$('connection').open=false;status('Conexão configurada. Informe seu e-mail e senha.');
 };
-$('first').onclick=()=>status('O 1º acesso sem e-mail depende da ativação administrativa. Solicite a liberação ao administrador.',true);
+let activationMode='first';
+function activation(mode){
+ activationMode=mode;
+ $('activationTitle').textContent=mode==='first'?'1º acesso — criar senha':'Esqueci minha senha — redefinir senha';
+ $('activationEmail').value=$('email').value||'';
+ $('activationCode').value='';$('activationPass').value='';$('activationPass2').value='';
+ $('activationForm').hidden=false;
+ status('Solicite ao administrador um código de autorização temporário. Nenhum e-mail será enviado.');
+}
+$('first').onclick=()=>activation('first');
+$('forgot').onclick=()=>activation('reset');
+$('activationCancel').onclick=()=>{$('activationForm').hidden=true;status('Informe e-mail e senha.')};
+$('activationSubmit').onclick=async()=>{
+ const email=$('activationEmail').value.trim().toLowerCase();
+ const code=$('activationCode').value.trim();
+ const p=$('activationPass').value,p2=$('activationPass2').value;
+ if(!email||!code||!p||!p2){status('Preencha e-mail, código temporário e as duas senhas.',true);return}
+ if(p!==p2){status('As senhas não conferem.',true);return}
+ if(p.length<12){status('Use uma senha com pelo menos 12 caracteres.',true);return}
+ const url=String(cfg.adminApiUrl||'').replace(/\/$/,'');
+ if(!url){status('O formulário está pronto, mas o serviço seguro de ativação ainda não foi implantado. Não é possível criar ou redefinir senhas apenas pelo GitHub Pages.',true);return}
+ const button=$('activationSubmit');button.disabled=true;
+ try{
+  const res=await fetch(url+'/account/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,code,password:p,mode:activationMode})});
+  const result=await res.json().catch(()=>({}));
+  if(!res.ok)throw Error(result.message||'Autorização não confirmada.');
+  $('activationForm').hidden=true;$('email').value=email;$('password').value='';
+  status('Senha cadastrada. Entre com seu e-mail e sua nova senha.');
+ }catch(error){status('Não foi possível ativar ou redefinir: '+(error.message||error),true)}
+ finally{button.disabled=false}
+};
 $('enter').onclick=async()=>{
  const email=$('email').value.trim().toLowerCase(),password=$('password').value,key=getKey();
  if(!email||!password){status('Informe seu e-mail e senha.',true);return}
