@@ -5,7 +5,7 @@
 <main class="card"><h2>Entrar</h2>
 <label for="email">E-mail</label><input id="email" type="email" autocomplete="username" placeholder="Seu e-mail" required>
 <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" placeholder="Sua senha" required>
-<div class="buttons"><button type="button" id="enter">Entrar</button><button type="button" class="secondary" id="first">1º acesso</button></div>
+<div class="buttons"><button type="button" id="enter">Entrar</button><button type="button" class="secondary" id="first">1º acesso</button><button type="button" class="secondary" id="checkSession">Verificar sessão existente</button></div>
 <div class="message" id="status" role="status">Informe e-mail e senha.</div>
 <details id="connection" class="connection"><summary>Configuração de conexão (somente na primeira utilização)</summary>
 <label for="anon">Chave pública ANON do SuperDB</label>
@@ -21,6 +21,29 @@ const $=id=>document.getElementById(id);
 const status=(v,error=false)=>{$('status').textContent=v;$('status').className='message'+(error?' error':'')};
 const getKey=()=>cfg.anonKey||localStorage.getItem('mf_superdb_anon')||sessionStorage.getItem('mf_superdb_anon')||'';
 const valid=key=>key.split('.').length===3;
+async function clientFor(key){
+ let last;
+ for(const url of ['https://cdn.jsdelivr.net/npm/@superdb/client/+esm','https://esm.sh/@superdb/client?bundle']){
+  try{const lib=await import(url);if(typeof lib.createClient==='function')return lib.createClient(cfg.url,key,{project:cfg.projectId});throw Error('SDK incompatível')}
+  catch(error){last=error}
+ }
+ throw last||Error('SDK indisponível');
+}
+async function validateSession(db){
+ const {data,error}=await db.auth.getUser();
+ if(error||!data?.user)throw error||Error('Não existe sessão ativa.');
+ const {data:profile,error:profileError}=await db.from('art_profiles').select('id,role,active').eq('id',data.user.id).maybeSingle();
+ if(profileError||!profile?.active)throw profileError||Error('Conta inativa ou não autorizada.');
+ return profile;
+}
+$('checkSession').onclick=async()=>{
+ const key=getKey();
+ if(!valid(key)){$('connection').open=true;status('Configure a chave pública ANON.',true);return}
+ $('checkSession').disabled=true;status('Verificando sessão sem enviar senha...');
+ try{const db=await clientFor(key);await validateSession(db);status('Sessão válida. Abrindo Mapa de Risco...');location.replace('./')}
+ catch(error){status('Não foi possível reutilizar a sessão: '+(error.message||error),true)}
+ finally{$('checkSession').disabled=false}
+};
 if(!valid(getKey())){$('connection').open=true;status('Configure a chave pública ANON uma vez e depois entre com e-mail e senha.')}
 $('saveKey').onclick=()=>{
  const key=$('anon').value.trim();
@@ -34,18 +57,10 @@ $('enter').onclick=async()=>{
  if(!valid(key)){$('connection').open=true;status('Configure a chave ANON pública uma vez para conectar ao SuperDB.',true);return}
  $('enter').disabled=true;status('Autenticando com SuperDB...');
  try{
-  let lib=null,last=null;
-  for(const url of ['https://esm.sh/@superdb/client?bundle','https://cdn.jsdelivr.net/npm/@superdb/client/+esm']){
-   try{lib=await import(url);if(typeof lib.createClient==='function')break;throw Error('SDK não exporta createClient')}catch(err){last=err}
-  }
-  if(!lib||typeof lib.createClient!=='function')throw Error('Não foi possível carregar o SDK: '+(last?.message||'indisponível'));
-  const db=lib.createClient(cfg.url,key,{project:cfg.projectId});
+  const db=await clientFor(key);
   const {error}=await db.auth.signInWithPassword({email,password});
   if(error)throw error;
-  const {data:{user},error:userErr}=await db.auth.getUser();
-  if(userErr||!user)throw userErr||Error('Sessão não identificada');
-  const {data:profile,error:profileErr}=await db.from('art_profiles').select('id,role,active').eq('id',user.id).maybeSingle();
-  if(profileErr||!profile?.active){await db.auth.signOut();throw profileErr||Error('Conta inativa ou sem autorização')}
+  await validateSession(db);
   status('Login autorizado. Abrindo Mapa de Risco...');
   location.replace('./');
  }catch(err){
