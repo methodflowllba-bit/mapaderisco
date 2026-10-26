@@ -136,7 +136,7 @@ async function sairDoMapaDeRisco(){
   let client=existing;
   if(!client){
    const cfg=window.MF_AUTH_CONFIG||{};
-   const anon=cfg.anonKey||sessionStorage.getItem('mf_superdb_anon')||'';
+   const anon=cfg.anonKey||localStorage.getItem('mf_superdb_anon')||sessionStorage.getItem('mf_superdb_anon')||'';
    if(anon){
     const lib=await import('https://esm.sh/@superdb/client?bundle');
     client=lib.createClient(cfg.url,anon,{project:cfg.projectId});
@@ -146,7 +146,7 @@ async function sairDoMapaDeRisco(){
    const {error}=await client.auth.signOut();
    if(error)throw error;
   }
-  window.location.assign('./teste-login.html');
+  window.location.assign('./login.html');
  }catch(error){
   alert('Não foi possível encerrar a sessão no SuperDB: '+(error?.message||String(error))+'. Tente novamente.');
  }finally{
