@@ -1,0 +1,63 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Usuários | Method Flow</title>
+<style>*{box-sizing:border-box}body{font:15px Arial,sans-serif;margin:0;background:#edf3f9;color:#182e4a}header{background:#081d44;color:#fff;padding:22px 5%}main{max-width:1100px;margin:24px auto;padding:0 15px}.panel{background:#fff;padding:23px;border-radius:12px;margin:16px 0;box-shadow:0 3px 18px #0012}h1{margin:0;font-size:25px}h2{margin:0 0 18px;font-size:19px}p{line-height:1.5}label{font-weight:600;display:block;margin-bottom:6px}input,select{border:1px solid #c7d4e5;padding:10px;width:100%;border-radius:6px;font:inherit}.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}button,.btn{display:inline-block;border:0;background:#0764bf;color:white;padding:10px 14px;border-radius:7px;font-weight:600;cursor:pointer;text-decoration:none}button:disabled{opacity:.52;cursor:not-allowed}.secondary{background:#e5ecf5;color:#142f52}.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.row .grow{flex:1}.hint{font-size:13px;color:#596d85}.error{background:#fff0f0;color:#a3202e;padding:10px;border-radius:6px}.notice{background:#eff5fc;padding:12px;border-radius:6px}.entry{border-bottom:1px solid #dce5ef;padding:12px 0;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}.pill{font-size:12px;background:#e7f1ff;padding:5px 9px;border-radius:20px}a{color:#145dab}</style></head><body>
+<header><h1>Method Flow — Usuários</h1><p>Administração de acesso às auditorias ART</p></header>
+<main><div class="row"><a class="btn secondary" href="./">Voltar ao Mapa de Risco</a><a class="btn secondary" href="./login.html">Tela de login</a></div>
+<section class="panel"><h2>Verificação de administrador</h2><div class="notice" id="status" role="status">Verificando sessão e permissões no SuperDB...</div></section>
+<div id="content" hidden>
+<section class="panel"><h2>Cadastrar usuário</h2><p class="hint">Somente um administrador autorizado pode cadastrar e liberar usuários. O cadastro definitivo e o código de primeiro acesso exigem uma API administrativa segura, sem chaves de servidor no navegador.</p>
+<div class="fields"><div><label for="name">Nome</label><input id="name" autocomplete="off"></div><div><label for="email">E-mail</label><input id="email" type="email" autocomplete="off"></div><div><label for="role">Perfil</label><select id="role"><option value="usuario">Usuário</option><option value="administrador">Administrador</option></select></div><div><label for="state">Status inicial</label><select id="state"><option value="true">Ativo</option><option value="false">Inativo</option></select></div></div>
+<p><button id="create" disabled>+ Cadastrar usuário</button></p><p class="hint" id="apiState">Cadastro administrativo indisponível até a implantação do backend.</p></section>
+<section class="panel"><div class="row"><h2 class="grow">Usuários cadastrados</h2><button id="reload" class="secondary">Atualizar</button></div><div id="users" role="region">Consultando...</div></section>
+</div></main><script src="./auth-config.js"></script>
+<script type="module">
+const cfg=window.MF_AUTH_CONFIG||{},$=id=>document.getElementById(id);
+const notice=(text,error=false)=>{$('status').textContent=text;$('status').className=error?'error':'notice'};
+const safe=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const key=cfg.anonKey||localStorage.getItem('mf_superdb_anon')||sessionStorage.getItem('mf_superdb_anon')||'';
+let db=null,viewer=null;
+async function getClient(){
+ let error;
+ for(const url of ['https://cdn.jsdelivr.net/npm/@superdb/client/+esm','https://esm.sh/@superdb/client?bundle']){
+  try{let lib=await import(url);if(typeof lib.createClient==='function')return lib.createClient(cfg.url,key,{project:cfg.projectId})}
+  catch(e){error=e}
+ }
+ throw error||Error('Biblioteca SuperDB indisponível');
+}
+async function readUsers(){
+ const {data,error}=await db.from('art_profiles').select('id,email,role,active').order('email');
+ if(error)throw error;
+ $('users').innerHTML=(data||[]).map(p=>'<div class="entry"><div><strong>'+safe(p.email)+'</strong><div class="hint">'+safe(p.role)+'</div></div><div><span class="pill">'+(p.active?'Ativo':'Inativo')+'</span></div></div>').join('')||'<p>Nenhum usuário encontrado.</p>';
+}
+async function init(){
+ if(!key){notice('Falta configurar a chave pública ANON do SuperDB na tela de login.',true);return}
+ try{
+  db=await getClient();
+  const {data,error}=await db.auth.getUser();
+  if(error||!data?.user)throw Error('Faça login antes de acessar a administração de usuários.');
+  const {data:profile,error:profileError}=await db.from('art_profiles').select('role,active,email').eq('id',data.user.id).maybeSingle();
+  if(profileError)throw profileError;
+  if(!profile?.active||!['principal','administrador'].includes(profile.role))throw Error('Acesso permitido apenas para administradores ativos.');
+  viewer=profile;$('content').hidden=false;notice('Autenticado: '+profile.email+' · '+profile.role+'.');
+  const ready=Boolean(cfg.adminApiUrl);
+  $('apiState').textContent=ready?'API administrativa configurada. Operações exigem autenticação e validação de permissão no servidor.':'Cadastro, ativação e códigos temporários aguardam serviço administrativo seguro.';
+  $('create').disabled=!ready;
+  $('create').onclick=async()=>{
+   const name=$('name').value.trim(),email=$('email').value.trim().toLowerCase(),role=$('role').value,active=$('state').value==='true';
+   if(!name||!email){notice('Informe nome e e-mail.',true);return}
+   const btn=$('create');btn.disabled=true;
+   try{
+    const {data:sessionData,error:sessionError}=await db.auth.getSession();
+    if(sessionError||!sessionData?.session?.access_token)throw Error('Sessão não disponível para operação administrativa.');
+    const response=await fetch(cfg.adminApiUrl.replace(/\/$/,'')+'/users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+sessionData.session.access_token},body:JSON.stringify({name,email,role,active})});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(result.message||'Não foi possível criar o usuário.');
+    notice('Solicitação de cadastro concluída. Atualize a lista para confirmar.');
+    await readUsers();
+   }catch(error){notice('Falha no cadastro: '+(error.message||error),true)}
+   finally{btn.disabled=false}
+  };
+  await readUsers();$('reload').onclick=()=>readUsers().catch(e=>notice(e.message,true));
+ }catch(e){notice(e.message||String(e),true)}
+}
+init();
+</script></body></html>
