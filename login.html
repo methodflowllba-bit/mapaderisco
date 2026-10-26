@@ -48,7 +48,15 @@ $('enter').onclick=async()=>{
   if(profileErr||!profile?.active){await db.auth.signOut();throw profileErr||Error('Conta inativa ou sem autorização')}
   status('Login autorizado. Abrindo Mapa de Risco...');
   location.replace('./');
- }catch(err){status('Não foi possível entrar: '+(err.message||String(err)),true)}
- finally{$('enter').disabled=false}
+ }catch(err){
+    const message=String(err?.message||err);
+    if(/too many failed attempts|rate.?limit|too many requests|429/i.test(message)){
+      status('Muitas tentativas de acesso. O SuperDB limitou temporariamente novos logins. Não tente novamente até a liberação; verifique a situação em SuperDB → Autenticação → Usuários.',true);
+      $('enter').disabled=true;
+      return;
+    }
+    status('Não foi possível entrar: '+message,true);
+  }
+ finally{if(!/Muitas tentativas de acesso/.test($('status').textContent))$('enter').disabled=false}
 };
 </script></body></html>
