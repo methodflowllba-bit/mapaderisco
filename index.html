@@ -130,17 +130,22 @@ header{flex-wrap:wrap}
 async function sairDoMapaDeRisco(){
  if(!confirm('Deseja sair e voltar à tela de login? Salve sua ART antes de continuar.'))return;
  const button=document.getElementById('mfLogoutHeader');
+ if(button)button.disabled=true;
  try{
-  if(button)button.disabled=true;
-  const existing=window.MethodFlowAuth?.client;
-  let client=existing;
-  if(!client){
-   const cfg=window.MF_AUTH_CONFIG||{};
-   const anon=cfg.anonKey||localStorage.getItem('mf_superdb_anon')||sessionStorage.getItem('mf_superdb_anon')||'';
-   if(anon){
-    const lib=await import('https://esm.sh/@superdb/client?bundle');
-    client=lib.createClient(cfg.url,anon,{project:cfg.projectId});
+  let client=window.MethodFlowAuth?.client;
+  const cfg=window.MF_AUTH_CONFIG||{};
+  const anon=cfg.anonKey||localStorage.getItem('mf_superdb_anon')||sessionStorage.getItem('mf_superdb_anon')||'';
+  if(!client&&anon){
+   let last;
+   for(const source of ['https://cdn.jsdelivr.net/npm/@superdb/client/+esm','https://esm.sh/@superdb/client?bundle']){
+    try{
+     const lib=await import(source);
+     if(typeof lib.createClient!=='function')throw Error('Biblioteca indisponível');
+     client=lib.createClient(cfg.url,anon,{project:cfg.projectId});
+     break;
+    }catch(error){last=error}
    }
+   if(!client)throw last||Error('Não foi possível carregar o SuperDB.');
   }
   if(client){
    const {error}=await client.auth.signOut();
@@ -148,10 +153,9 @@ async function sairDoMapaDeRisco(){
   }
   window.location.assign('./login.html');
  }catch(error){
-  alert('Não foi possível encerrar a sessão no SuperDB: '+(error?.message||String(error))+'. Tente novamente.');
- }finally{
-  if(button)button.disabled=false;
- }
+  alert('Não foi possível confirmar o encerramento da sessão: '+(error?.message||String(error))+'. Você será direcionado à tela de login, mas a sessão poderá continuar ativa.');
+  window.location.assign('./login.html');
+ }finally{if(button)button.disabled=false}
 }
 let listas={},passos=[],id=crypto.randomUUID();const campos=['Unidade','Setor','Data','Tarefa','Função/Cargo','Responsável','Código ART','Revisão'];let header={};const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const opts=(key,value)=>'<option value="">Selecione</option>'+[...new Set([...(listas[key]||[]),...(value?[value]:[])])].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR',{sensitivity:'base',numeric:true})).map(v=>`<option ${String(v)===String(value)?'selected':''}>${esc(v)}</option>`).join('');function nivel(n){return n<16?['Aceitável','ok']:n<=168?['Menos crítico','moderate']:n<=400?['Crítico','high']:['Muito crítico','critical']}function capture(){document.querySelectorAll('[data-header]').forEach(e=>header[e.dataset.header]=e.value);document.querySelectorAll('[data-step]').forEach(e=>{let [i,k]=e.dataset.step.split(':');if(passos[i])passos[i][k]=e.value});document.querySelectorAll('[data-av]').forEach(e=>{const [i,j,k]=e.dataset.av.split(':');if(passos[i]?.avaliacoes?.[j])passos[i].avaliacoes[j][k]=e.value})}
 const ordenarTemas=itens=>[...itens].sort((a,b)=>String(a).localeCompare(String(b),'pt-BR',{sensitivity:'base',numeric:true}));
