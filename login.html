@@ -83,7 +83,7 @@ $('activationSubmit').onclick=async()=>{
  if(!url){status('O formulário está pronto, mas o serviço seguro de ativação ainda não foi implantado. Não é possível criar ou redefinir senhas apenas pelo GitHub Pages.',true);return}
  const button=$('activationSubmit');button.disabled=true;
  try{
-  const res=await fetch(url+'/account/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,code,password:p,mode:activationMode})});
+  const res=await fetch(url+'/api/admin?route=account%2Factivate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,code,password:p,mode:activationMode})});
   const result=await res.json().catch(()=>({}));
   if(!res.ok)throw Error(result.message||'Autorização não confirmada.');
   $('activationForm').hidden=true;$('email').value=email;$('password').value='';
