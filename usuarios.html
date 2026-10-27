@@ -48,7 +48,7 @@ async function init(){
    try{
     const {data:sessionData,error:sessionError}=await db.auth.getSession();
     if(sessionError||!sessionData?.session?.access_token)throw Error('Sessão não disponível para operação administrativa.');
-    const response=await fetch(cfg.adminApiUrl.replace(/\/$/,'')+'/users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+sessionData.session.access_token},body:JSON.stringify({name,email,role,active})});
+    const response=await fetch(cfg.adminApiUrl.replace(/\/$/,'')+'/api/admin?route=users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+sessionData.session.access_token},body:JSON.stringify({name,email,role,active})});
     const result=await response.json().catch(()=>({}));
     if(!response.ok)throw Error(result.message||'Não foi possível criar o usuário.');
     notice('Solicitação de cadastro concluída. Atualize a lista para confirmar.');
