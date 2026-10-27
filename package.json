@@ -6,6 +6,6 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@superdb/client": "^0.3.0"
+    "@superdb/client": "^0.4.2"
   }
 }
